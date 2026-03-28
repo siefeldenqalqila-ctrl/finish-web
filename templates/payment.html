@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>طرق الدفع - Eco Paper Recycling</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-green-800 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2 space-x-reverse">
+                <i class="fas fa-recycle text-2xl"></i>
+                <a href="{{ url_for('base') }}" class="text-xl font-bold">Eco Paper Recycling</a>
+            </div>
+            
+            <div class="hidden md:flex items-center space-x-6 space-x-reverse">
+                <a href="{{ url_for('base') }}" class="hover:text-green-300">
+                    <i class="fas fa-home ml-2"></i>الرئيسية
+                </a>
+                <a href="{{ url_for('create_order') }}" class="hover:text-green-300">
+                    <i class="fas fa-shopping-cart ml-2"></i>العودة للطلب
+                </a>
+                <button id="logoutBtn" class="text-red-300 hover:text-red-400">
+                    <i class="fas fa-sign-out-alt ml-2"></i>تسجيل الخروج
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-10">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-green-200 text-green-800 flex items-center justify-center font-bold">
+                        1
+                    </div>
+                    <div class="mr-4">
+                        <p class="font-bold text-gray-600">المنتجات</p>
+                        <p class="text-sm text-gray-500">اختيار المنتجات</p>
+                    </div>
+                </div>
+                
+                <div class="h-1 flex-1 bg-green-200 mx-4"></div>
+                
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-green-200 text-green-800 flex items-center justify-center font-bold">
+                        2
+                    </div>
+                    <div class="mr-4">
+                        <p class="font-bold text-gray-600">التفاصيل</p>
+                        <p class="text-sm text-gray-500">معلومات الاستلام</p>
+                    </div>
+                </div>
+                
+                <div class="h-1 flex-1 bg-green-600 mx-4"></div>
+                
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold">
+                        3
+                    </div>
+                    <div class="mr-4">
+                        <p class="font-bold text-green-800">الدفع</p>
+                        <p class="text-sm text-green-500">اختيار طريقة الدفع</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <h2 class="text-2xl font-bold text-green-800 mb-6">اختر طريقة الدفع</h2>
+                    
+                    <form id="paymentForm">
+                        <div class="space-y-4 mb-8">
+                            <label class="relative block">
+                                <input type="radio" name="paymentMethod" value="cash_on_delivery" 
+                                       class="hidden peer" checked>
+                                <div class="border-2 border-gray-300 rounded-xl p-4 cursor-pointer hover:border-green-500 peer-checked:border-green-600 peer-checked:bg-green-50 transition duration-300">
+                                    <div class="flex items-center">
+                                        <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 ml-4">
+                                            <i class="fas fa-money-bill-wave text-xl"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h4 class="font-bold text-lg">الدفع عند الاستلام</h4>
+                                            <p class="text-sm text-gray-600">ادفع نقداً عند استلام الورق</p>
+                                        </div>
+                                        <i class="fas fa-check-circle text-green-600 text-xl hidden peer-checked:block"></i>
+                                    </div>
+                                </div>
+                            </label>
+                            
+                            <label class="relative block">
+                                <input type="radio" name="paymentMethod" value="vodafone_cash" 
+                                       class="hidden peer">
+                                <div class="border-2 border-gray-300 rounded-xl p-4 cursor-pointer hover:border-green-500 peer-checked:border-green-600 peer-checked:bg-green-50 transition duration-300">
+                                    <div class="flex items-center">
+                                        <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 ml-4">
+                                            <i class="fas fa-mobile-alt text-xl"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h4 class="font-bold text-lg">فودافون كاش</h4>
+                                            <p class="text-sm text-gray-600">ادفع باستخدام فودافون كاش</p>
+                                        </div>
+                                        <i class="fas fa-check-circle text-green-600 text-xl hidden peer-checked:block"></i>
+                                    </div>
+                                </div>
+                            </label>
+                            
+                            <label class="relative block">
+                                <input type="radio" name="paymentMethod" value="credit_card" 
+                                       class="hidden peer">
+                                <div class="border-2 border-gray-300 rounded-xl p-4 cursor-pointer hover:border-green-500 peer-checked:border-green-600 peer-checked:bg-green-50 transition duration-300">
+                                    <div class="flex items-center">
+                                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 ml-4">
+                                            <i class="fas fa-credit-card text-xl"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h4 class="font-bold text-lg">البطاقة البنكية</h4>
+                                            <p class="text-sm text-gray-600">ادفع باستخدام بطاقة ائتمان أو مدى</p>
+                                        </div>
+                                        <i class="fas fa-check-circle text-green-600 text-xl hidden peer-checked:block"></i>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div id="electronicPaymentDetails" class="hidden">
+                            <h3 class="text-xl font-bold text-green-800 mb-4">تفاصيل الدفع الإلكتروني</h3>
+                            
+                            <div id="vodafoneCashDetails" class="hidden space-y-4">
+                                <div>
+                                    <label for="vodafoneNumber" class="block text-sm font-medium text-gray-700 mb-2">
+                                        رقم فودافون كاش *
+                                    </label>
+                                    <input type="tel" id="vodafoneNumber" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                           placeholder="01XXXXXXXXX">
+                                    <div id="vodafoneError" class="text-red-500 text-sm mt-1 hidden"></div>
+                                </div>
+                                
+                                <div class="bg-blue-50 p-4 rounded-lg">
+                                    <p class="text-sm text-blue-700">
+                                        <i class="fas fa-info-circle ml-2"></i>
+                                        سيتم إرسال طلب تحويل إلى رقم الهاتف المدخل
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div id="creditCardDetails" class="hidden space-y-4">
+                                <div>
+                                    <label for="cardNumber" class="block text-sm font-medium text-gray-700 mb-2">
+                                        رقم البطاقة *
+                                    </label>
+                                    <input type="text" id="cardNumber" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                           placeholder="XXXX XXXX XXXX XXXX">
+                                    <div id="cardNumberError" class="text-red-500 text-sm mt-1 hidden"></div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="expiryDate" class="block text-sm font-medium text-gray-700 mb-2">
+                                            تاريخ الانتهاء *
+                                        </label>
+                                        <input type="text" id="expiryDate" 
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                               placeholder="MM/YY">
+                                        <div id="expiryError" class="text-red-500 text-sm mt-1 hidden"></div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="cvv" class="block text-sm font-medium text-gray-700 mb-2">
+                                            CVV *
+                                        </label>
+                                        <input type="text" id="cvv" 
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                               placeholder="XXX">
+                                        <div id="cvvError" class="text-red-500 text-sm mt-1 hidden"></div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="cardHolder" class="block text-sm font-medium text-gray-700 mb-2">
+                                        اسم صاحب البطاقة *
+                                    </label>
+                                    <input type="text" id="cardHolder" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                           placeholder="الاسم كما هو مدون على البطاقة">
+                                    <div id="cardHolderError" class="text-red-500 text-sm mt-1 hidden"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 flex space-x-4 space-x-reverse">
+                            <a href="{{ url_for('create_order') }}" 
+                               class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-50 transition duration-300 text-center">
+                                <i class="fas fa-arrow-right ml-2"></i>
+                                العودة للطلب
+                            </a>
+                            
+                            <button type="button" onclick="processPayment()" 
+                                    class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition duration-300">
+                                <i class="fas fa-lock ml-2"></i>
+                                تأكيد الدفع
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div>
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <h2 class="text-xl font-bold text-green-800 mb-4">ملخص الطلب</h2>
+                    
+                    <div id="orderSummary">
+                        <div class="text-center py-8">
+                            <div class="loading-spinner mx-auto"></div>
+                            <p class="text-gray-500 mt-2">جاري تحميل بيانات الطلب...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-6">
+                    <h3 class="font-bold text-blue-800 mb-3">سياسات الدفع</h3>
+                    
+                    <ul class="space-y-2 text-sm text-blue-700">
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle mt-1 ml-2"></i>
+                            <span>يمكنك إلغاء الطلب قبل 24 ساعة من موعد الاستلام</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle mt-1 ml-2"></i>
+                            <span>يتم إرجاع المبلغ في حالة عدم الاستلام خلال 7 أيام</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle mt-1 ml-2"></i>
+                            <span>للاستفسارات اتصل بالدعم: 01234567890</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/action.js') }}"></script>
+    <script>
+        let orderData = {};
+        let customerData = {};
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            API.getUserData().then(response => {
+                if (!response.success) {
+                    window.location.href = "{{ url_for('login') }}";
+                    return;
+                }
+                customerData = response.user;
+            });
+            
+            loadOrderData();
+            
+            document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    handlePaymentMethodChange(this.value);
+                });
+            });
+
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+        });
+        
+        function loadOrderData() {
+            const tempOrder = JSON.parse(localStorage.getItem('tempOrder') || 'null');
+            
+            if (!tempOrder) {
+                showMessage('لا توجد بيانات طلب، يرجى العودة وتحديد المنتجات', 'error');
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('create_order') }}";
+                }, 2000);
+                return;
+            }
+            
+            orderData = tempOrder;
+            updateOrderSummary();
+        }
+        
+        function updateOrderSummary() {
+            const summaryDiv = document.getElementById('orderSummary');
+            
+            let productsHTML = '';
+            
+            if (orderData.products && orderData.products.length > 0) {
+                orderData.products.forEach(product => {
+                    const productTotal = product.price * product.quantity;
+                    productsHTML += `
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                            <div>
+                                <p class="font-medium">${product.name}</p>
+                                <p class="text-sm text-gray-500">${product.quantity} ${product.unit}</p>
+                            </div>
+                            <span class="font-bold">${productTotal.toFixed(2)} ج.م</span>
+                        </div>
+                    `;
+                });
+                
+                const deliveryFee = orderData.delivery_fee || 0;
+                const subtotal = orderData.subtotal || 0;
+                const total = orderData.total || 0;
+                
+                summaryDiv.innerHTML = `
+                    <div class="mb-4">
+                        ${productsHTML}
+                    </div>
+                    
+                    <div class="space-y-2 border-t border-gray-300 pt-4">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">المجموع الفرعي:</span>
+                            <span class="font-bold">${subtotal.toFixed(2)} ج.م</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">رسوم التوصيل:</span>
+                            <span class="font-bold">${deliveryFee.toFixed(2)} ج.م</span>
+                        </div>
+                        <div class="flex justify-between text-lg font-bold text-green-800 pt-2 border-t border-gray-300">
+                            <span>الإجمالي:</span>
+                            <span>${total.toFixed(2)} ج.م</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        function handlePaymentMethodChange(method) {
+            const detailsDiv = document.getElementById('electronicPaymentDetails');
+            const vodafoneDiv = document.getElementById('vodafoneCashDetails');
+            const cardDiv = document.getElementById('creditCardDetails');
+            
+            if (method === 'cash_on_delivery') {
+                detailsDiv.classList.add('hidden');
+            } else {
+                detailsDiv.classList.remove('hidden');
+                
+                if (method === 'vodafone_cash') {
+                    vodafoneDiv.classList.remove('hidden');
+                    cardDiv.classList.add('hidden');
+                } else if (method === 'credit_card') {
+                    vodafoneDiv.classList.add('hidden');
+                    cardDiv.classList.remove('hidden');
+                }
+            }
+        }
+        
+        function processPayment() {
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+            
+            if (paymentMethod === 'vodafone_cash') {
+                const vodafoneNumber = document.getElementById('vodafoneNumber').value;
+                
+                if (!vodafoneNumber) {
+                    document.getElementById('vodafoneError').textContent = 'يرجى إدخال رقم فودافون كاش';
+                    document.getElementById('vodafoneError').classList.remove('hidden');
+                    return;
+                }
+                
+                if (!validatePhone(vodafoneNumber)) {
+                    document.getElementById('vodafoneError').textContent = 'رقم الهاتف غير صالح';
+                    document.getElementById('vodafoneError').classList.remove('hidden');
+                    return;
+                }
+            }
+            
+            orderData.payment_method = paymentMethod;
+            saveOrder();
+        }
+        
+        async function saveOrder() {
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            
+            orderData.customerName = userData.name;
+            orderData.customerPhone = userData.phone;
+            orderData.customerEmail = userData.email;
+            orderData.user_id = userData.id;
+            
+            // إظهار مؤشر التحميل
+            const submitBtn = document.querySelector('button[onclick="processPayment()"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري إنشاء الطلب...';
+            submitBtn.disabled = true;
+            
+            try {
+                console.log('Sending order data:', orderData);
+                
+                const response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
+                });
+                
+                const result = await response.json();
+                console.log('Order creation response:', result);
+                
+                if (result.success) {
+                    showMessage('تم إنشاء الطلب بنجاح', 'success');
+                    
+                    // تخزين order_number في localStorage
+                    localStorage.setItem('last_order_number', result.order_number);
+                    localStorage.removeItem('tempOrder');
+                    localStorage.removeItem('cart');
+                    
+                    // التوجيه إلى صفحة التأكيد مع order_number
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('order_confirm') }}?order=" + result.order_number;
+                    }, 1500);
+                } else {
+                    showMessage(result.message || 'حدث خطأ أثناء إنشاء الطلب', 'error');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error creating order:', error);
+                showMessage('حدث خطأ في الاتصال بالخادم', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+        
+        function validatePhone(phone) {
+            const re = /^01[0125][0-9]{8}$/;
+            return re.test(phone);
+        }
+        
+        async function logout() {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                const result = await API.logout();
+                if (result.success) {
+                    localStorage.clear();
+                    window.location.href = "{{ url_for('index') }}";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - Eco Paper Recycling</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-green-800 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2 space-x-reverse">
+                <i class="fas fa-recycle text-2xl"></i>
+                <a href="{{ url_for('index') }}" class="text-xl font-bold">Eco Paper Recycling</a>
+            </div>
+            
+            <div class="hidden md:flex space-x-6 space-x-reverse">
+                <a href="{{ url_for('index') }}" class="hover:text-green-300">الرئيسية</a>
+                <a href="{{ url_for('product') }}" class="hover:text-green-300">الخدمات</a>
+                <a href="{{ url_for('login') }}" class="hover:text-green-300">حسابي</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="fixed top-4 right-4 z-50">
+                    <div class="bg-{% if category == 'success' %}green{% else %}red{% endif %}-100 border border-{% if category == 'success' %}green{% else %}red{% endif %}-400 text-{% if category == 'success' %}green{% else %}red{% endif %}-700 px-6 py-4 rounded-lg shadow-lg flex items-center">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} ml-3 text-xl"></i>
+                        <span class="font-medium">{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="mr-6">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-5xl w-full flex flex-col md:flex-row shadow-2xl rounded-2xl overflow-hidden">
+            <div class="w-full md:w-1/2 bg-white p-8 md:p-12">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-green-800">تسجيل الدخول</h2>
+                    <p class="text-gray-600 mt-2">أدخل بيانات حسابك للوصول إلى خدمات المنصة</p>
+                </div>
+                
+                <form id="loginForm" class="space-y-6" action="{{ url_for('sure') }}" method="post">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                            البريد الإلكتروني
+                        </label>
+                        <input type="email" id="email" name="email" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-300"
+                               placeholder="example@domain.com" required>
+                        <div id="emailError" class="text-red-500 text-sm mt-1 hidden"></div>
+                    </div>
+                    
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                            كلمة المرور
+                        </label>
+                        <input type="password" id="password" name="password" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-300"
+                               placeholder="أدخل كلمة المرور" required>
+                        <div id="passwordError" class="text-red-500 text-sm mt-1 hidden"></div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="rememberMe" name="rememberMe" type="checkbox" 
+                                   class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded ml-2">
+                            <label for="rememberMe" class="text-sm text-gray-700">
+                                تذكرني
+                            </label>
+                        </div>
+                        
+                        <a href="{{ url_for('forget_password') }}" class="text-sm text-green-600 hover:text-green-800 font-medium">
+                            نسيت كلمة المرور؟
+                        </a>
+                    </div>
+                    
+                    <div>
+                        <button type="submit" 
+                                class="w-full bg-green-700 text-white py-3 px-4 rounded-lg font-bold hover:bg-green-800 transition duration-300 flex items-center justify-center">
+                            <i class="fas fa-sign-in-alt ml-2"></i>
+                            تسجيل الدخول
+                        </button>
+                    </div>
+                    
+                    <div class="text-center">
+                        <p class="text-gray-600">
+                            ليس لديك حساب؟ 
+                            <a href="{{ url_for('register') }}" class="text-green-600 hover:text-green-800 font-medium">
+                                سجل الآن
+                            </a>
+                        </p>
+                    </div>
+                </form>
+                
+                <div class="mt-8 pt-8 border-t border-gray-200">
+                    <p class="text-center text-gray-600 mb-4">أو تسجيل الدخول باستخدام</p>
+                    <div class="flex justify-center space-x-4 space-x-reverse">
+                        <button class="p-3 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition duration-300">
+                            <i class="fab fa-facebook-f text-lg"></i>
+                        </button>
+                        <button class="p-3 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition duration-300">
+                            <i class="fab fa-google text-lg"></i>
+                        </button>
+                        <button class="p-3 bg-blue-300 text-white rounded-full hover:bg-blue-400 transition duration-300">
+                            <i class="fab fa-twitter text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="w-full md:w-1/2 bg-gradient-to-br from-green-700 to-green-900 text-white p-8 md:p-12 flex flex-col justify-center">
+                <div class="text-center">
+                    <i class="fas fa-leaf text-6xl mb-6 text-green-300"></i>
+                    <h3 class="text-2xl font-bold mb-4">شارك في حماية البيئة</h3>
+                    <p class="text-lg mb-6">
+                        انضم إلى أكثر من <span class="font-bold text-2xl">5,000</span> عميل نشط 
+                        يساهمون في إعادة تدوير الورق والحفاظ على البيئة.
+                    </p>
+                    <p class="text-lg mb-8">
+                        كل عملية إعادة تدوير تساهم في تقليل التلوث وتوفير الموارد الطبيعية 
+                        للأجيال القادمة.
+                    </p>
+                    
+                    <div class="bg-green-800 bg-opacity-50 rounded-lg p-6">
+                        <h4 class="text-xl font-bold mb-3">فوائد التسجيل في المنصة:</h4>
+                        <ul class="space-y-3 text-right">
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle ml-3 text-green-300"></i>
+                                <span>أسعار تنافسية لأفضل أنواع الورق</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle ml-3 text-green-300"></i>
+                                <span>خدمة استلام من المنزل أو مكان العمل</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle ml-3 text-green-300"></i>
+                                <span>تتبع الطلبات لحظة بلحظة</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle ml-3 text-green-300"></i>
+                                <span>دفع آمن ومتعدد الخيارات</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <a href="{{ url_for('index') }}" class="inline-block mt-8 text-green-300 hover:text-white font-medium">
+                        <i class="fas fa-arrow-right ml-2"></i>
+                        العودة إلى الصفحة الرئيسية
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/action.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/action2.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    const email = document.getElementById('email').value.trim();
+                    const password = document.getElementById('password').value.trim();
+                    
+                    document.getElementById('emailError').classList.add('hidden');
+                    document.getElementById('passwordError').classList.add('hidden');
+                    
+                    let isValid = true;
+                    
+                    if (!email) {
+                        document.getElementById('emailError').textContent = 'يرجى إدخال البريد الإلكتروني';
+                        document.getElementById('emailError').classList.remove('hidden');
+                        isValid = false;
+                    } else if (!validateEmail(email)) {
+                        document.getElementById('emailError').textContent = 'البريد الإلكتروني غير صالح';
+                        document.getElementById('emailError').classList.remove('hidden');
+                        isValid = false;
+                    }
+                    
+                    if (!password) {
+                        document.getElementById('passwordError').textContent = 'يرجى إدخال كلمة المرور';
+                        document.getElementById('passwordError').classList.remove('hidden');
+                        isValid = false;
+                    }
+                    
+                    if (!isValid) {
+                        e.preventDefault();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

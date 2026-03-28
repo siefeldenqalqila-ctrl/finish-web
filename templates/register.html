@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء حساب - Eco Paper Recycling</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .step-transition {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-green-800 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2 space-x-reverse">
+                <i class="fas fa-recycle text-2xl"></i>
+                <a href="{{ url_for('index') }}" class="text-xl font-bold">Eco Paper Recycling</a>
+            </div>
+            
+            <div class="hidden md:flex space-x-6 space-x-reverse">
+                <a href="{{ url_for('index') }}" class="hover:text-green-300">الرئيسية</a>
+                <a href="{{ url_for('login') }}" class="hover:text-green-300">تسجيل الدخول</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="fixed top-4 right-4 z-50">
+                    <div class="bg-{% if category == 'success' %}green{% else %}red{% endif %}-100 border border-{% if category == 'success' %}green{% else %}red{% endif %}-400 text-{% if category == 'success' %}green{% else %}red{% endif %}-700 px-6 py-4 rounded-lg shadow-lg flex items-center">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} ml-3 text-xl"></i>
+                        <span class="font-medium">{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="mr-6">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl w-full">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-green-800">إنشاء حساب جديد</h2>
+                <p class="text-gray-600 mt-2">انضم إلينا وابدأ رحلتك في إعادة التدوير</p>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div class="p-8">
+                    <!-- Progress Steps -->
+                    <div class="mb-10">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold" id="step1-circle">
+                                    1
+                                </div>
+                                <div class="mr-4">
+                                    <p class="font-bold text-green-800" id="step1-title">معلومات أساسية</p>
+                                    <p class="text-sm text-gray-500">البيانات الشخصية</p>
+                                </div>
+                            </div>
+                            
+                            <div class="h-1 flex-1 bg-green-200 mx-4" id="progress1"></div>
+                            
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold" id="step2-circle">
+                                    2
+                                </div>
+                                <div class="mr-4">
+                                    <p class="font-bold text-gray-600" id="step2-title">نوع الحساب</p>
+                                    <p class="text-sm text-gray-500">فردي أو شركة</p>
+                                </div>
+                            </div>
+                            
+                            <div class="h-1 flex-1 bg-gray-200 mx-4" id="progress2"></div>
+                            
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold" id="step3-circle">
+                                    3
+                                </div>
+                                <div class="mr-4">
+                                    <p class="font-bold text-gray-600" id="step3-title">إنهاء</p>
+                                    <p class="text-sm text-gray-500">تأكيد الحساب</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form id="registerForm" class="space-y-8" method="POST" action="{{ url_for('submit') }}">
+                        <!-- Step 1: Basic Information -->
+                        <div id="step1" class="step step-transition">
+                            <h3 class="text-xl font-bold text-green-800 mb-6">البيانات الشخصية</h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                                        الاسم بالكامل <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="name" name="name" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                           placeholder="أدخل اسمك بالكامل" required>
+                                    <div id="nameError" class="text-red-500 text-sm mt-1 hidden"></div>
+                                </div>
+                                
+                                <div>
+                                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                                        البريد الإلكتروني <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="email" id="email" name="email" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                           placeholder="example@domain.com" required>
+                                    <div id="emailError" class="text-red-500 text-sm mt-1 hidden"></div>
+                                </div>
+                                
+                                <div>
+                                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                                        رقم الهاتف <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="tel" id="phone" name="phone" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                           placeholder="01XXXXXXXXX" required>
+                                    <div id="phoneError" class="text-red-500 text-sm mt-1 hidden"></div>
+                                </div>
+                                
+                                <div>
+                                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                                        كلمة المرور <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="password" id="password" name="password" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                           placeholder="أدخل كلمة مرور قوية" required>
+                                    <div id="passwordError" class="text-red-500 text-sm mt-1 hidden"></div>
+                                </div>
+                                
+                                <div>
+                                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                                        تأكيد كلمة المرور <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="password" id="confirmPassword" name="confirmPassword" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                           placeholder="أعد إدخال كلمة المرور" required>
+                                    <div id="confirmPasswordError" class="text-red-500 text-sm mt-1 hidden"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-end mt-8">
+                                <button type="button" onclick="nextStep()" 
+                                        class="px-8 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition duration-300 transform hover:scale-105">
+                                    التالي <i class="fas fa-arrow-left mr-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 2: Account Type -->
+                        <div id="step2" class="step hidden step-transition">
+                            <h3 class="text-xl font-bold text-green-800 mb-6">نوع الحساب والعنوان</h3>
+                            
+                            <div class="mb-8">
+                                <p class="text-gray-600 mb-4">اختر نوع حسابك:</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <label class="relative cursor-pointer">
+                                        <input type="radio" name="userType" value="individual" class="hidden peer" checked>
+                                        <div class="border-2 border-gray-300 rounded-xl p-6 hover:border-green-500 peer-checked:border-green-600 peer-checked:bg-green-50 transition duration-300">
+                                            <div class="flex items-center mb-4">
+                                                <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 ml-4">
+                                                    <i class="fas fa-user text-xl"></i>
+                                                </div>
+                                                <div>
+                                                    <h4 class="font-bold text-lg">حساب فردي</h4>
+                                                    <p class="text-sm text-gray-500">للأفراد والمستخدمين العاديين</p>
+                                                </div>
+                                            </div>
+                                            <ul class="space-y-2 text-sm text-gray-600 pr-4">
+                                                <li class="flex items-center">
+                                                    <i class="fas fa-check text-green-600 ml-2"></i>
+                                                    <span>مناسب للأفراد والعائلات</span>
+                                                </li>
+                                                <li class="flex items-center">
+                                                    <i class="fas fa-check text-green-600 ml-2"></i>
+                                                    <span>كميات صغيرة ومتوسطة</span>
+                                                </li>
+                                                <li class="flex items-center">
+                                                    <i class="fas fa-check text-green-600 ml-2"></i>
+                                                    <span>دفع عند الاستلام</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </label>
+                                    
+                                    <label class="relative cursor-pointer">
+                                        <input type="radio" name="userType" value="company" class="hidden peer">
+                                        <div class="border-2 border-gray-300 rounded-xl p-6 hover:border-green-500 peer-checked:border-green-600 peer-checked:bg-green-50 transition duration-300">
+                                            <div class="flex items-center mb-4">
+                                                <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 ml-4">
+                                                    <i class="fas fa-building text-xl"></i>
+                                                </div>
+                                                <div>
+                                                    <h4 class="font-bold text-lg">حساب شركة</h4>
+                                                    <p class="text-sm text-gray-500">للشركات والمؤسسات</p>
+                                                </div>
+                                            </div>
+                                            <ul class="space-y-2 text-sm text-gray-600 pr-4">
+                                                <li class="flex items-center">
+                                                    <i class="fas fa-check text-green-600 ml-2"></i>
+                                                    <span>خصومات للكميات الكبيرة</span>
+                                                </li>
+                                                <li class="flex items-center">
+                                                    <i class="fas fa-check text-green-600 ml-2"></i>
+                                                    <span>فواتير ضريبية</span>
+                                                </li>
+                                                <li class="flex items-center">
+                                                    <i class="fas fa-check text-green-600 ml-2"></i>
+                                                    <span>خدمة عملاء مخصصة</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Company Information (Hidden by default) -->
+                            <div id="companyInfo" class="hidden mb-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
+                                <h4 class="text-lg font-bold text-green-800 mb-4">معلومات الشركة</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="companyName" class="block text-sm font-medium text-gray-700 mb-2">
+                                            اسم الشركة <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="text" id="companyName" name="companyName" 
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                               placeholder="اسم الشركة">
+                                        <div id="companyNameError" class="text-red-500 text-sm mt-1 hidden"></div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="taxNumber" class="block text-sm font-medium text-gray-700 mb-2">
+                                            الرقم الضريبي
+                                        </label>
+                                        <input type="text" id="taxNumber" name="taxNumber" 
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                               placeholder="اختياري">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Address Information -->
+                            <div class="mb-8">
+                                <h4 class="text-lg font-bold text-green-800 mb-4">العنوان</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="governorate" class="block text-sm font-medium text-gray-700 mb-2">
+                                            المحافظة <span class="text-red-500">*</span>
+                                        </label>
+                                        <select id="governorate" name="governorate" 
+                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" required>
+                                            <option value="">اختر المحافظة</option>
+                                            <option value="القاهرة">القاهرة</option>
+                                            <option value="الجيزة">الجيزة</option>
+                                            <option value="الإسكندرية">الإسكندرية</option>
+                                            <option value="الدقهلية">الدقهلية</option>
+                                            <option value="الشرقية">الشرقية</option>
+                                            <option value="الغربية">الغربية</option>
+                                            <option value="المنوفية">المنوفية</option>
+                                            <option value="كفر الشيخ">كفر الشيخ</option>
+                                            <option value="الفيوم">الفيوم</option>
+                                            <option value="بني سويف">بني سويف</option>
+                                            <option value="المنيا">المنيا</option>
+                                            <option value="أسيوط">أسيوط</option>
+                                            <option value="سوهاج">سوهاج</option>
+                                            <option value="قنا">قنا</option>
+                                            <option value="الأقصر">الأقصر</option>
+                                            <option value="أسوان">أسوان</option>
+                                        </select>
+                                        <div id="governorateError" class="text-red-500 text-sm mt-1 hidden"></div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
+                                            العنوان التفصيلي <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="text" id="address" name="address" 
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                               placeholder="الشارع، الحي، رقم المنزل" required>
+                                        <div id="addressError" class="text-red-500 text-sm mt-1 hidden"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between mt-8">
+                                <button type="button" onclick="prevStep()" 
+                                        class="px-8 py-3 border border-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-50 transition duration-300">
+                                    <i class="fas fa-arrow-right ml-2"></i> السابق
+                                </button>
+                                
+                                <button type="button" onclick="nextStep()" 
+                                        class="px-8 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition duration-300 transform hover:scale-105">
+                                    التالي <i class="fas fa-arrow-left mr-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 3: Confirmation -->
+                        <div id="step3" class="step hidden step-transition">
+                            <h3 class="text-xl font-bold text-green-800 mb-6">تأكيد المعلومات</h3>
+                            
+                            <div class="bg-green-50 rounded-xl p-6 mb-8 border border-green-200">
+                                <h4 class="font-bold text-green-800 mb-4 flex items-center">
+                                    <i class="fas fa-check-circle text-green-600 ml-2"></i>
+                                    يرجى مراجعة بياناتك:
+                                </h4>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-white p-3 rounded-lg">
+                                        <p class="text-sm text-gray-500">الاسم</p>
+                                        <p id="reviewName" class="font-bold text-green-800"></p>
+                                    </div>
+                                    
+                                    <div class="bg-white p-3 rounded-lg">
+                                        <p class="text-sm text-gray-500">البريد الإلكتروني</p>
+                                        <p id="reviewEmail" class="font-bold text-green-800"></p>
+                                    </div>
+                                    
+                                    <div class="bg-white p-3 rounded-lg">
+                                        <p class="text-sm text-gray-500">رقم الهاتف</p>
+                                        <p id="reviewPhone" class="font-bold text-green-800"></p>
+                                    </div>
+                                    
+                                    <div class="bg-white p-3 rounded-lg">
+                                        <p class="text-sm text-gray-500">نوع الحساب</p>
+                                        <p id="reviewType" class="font-bold text-green-800"></p>
+                                    </div>
+                                    
+                                    <div id="reviewCompany" class="hidden bg-white p-3 rounded-lg">
+                                        <p class="text-sm text-gray-500">اسم الشركة</p>
+                                        <p id="reviewCompanyName" class="font-bold text-green-800"></p>
+                                    </div>
+                                    
+                                    <div id="reviewTaxDiv" class="hidden bg-white p-3 rounded-lg">
+                                        <p class="text-sm text-gray-500">الرقم الضريبي</p>
+                                        <p id="reviewTaxNumber" class="font-bold text-green-800"></p>
+                                    </div>
+                                    
+                                    <div class="bg-white p-3 rounded-lg">
+                                        <p class="text-sm text-gray-500">المحافظة</p>
+                                        <p id="reviewGovernorate" class="font-bold text-green-800"></p>
+                                    </div>
+                                    
+                                    <div class="md:col-span-2 bg-white p-3 rounded-lg">
+                                        <p class="text-sm text-gray-500">العنوان</p>
+                                        <p id="reviewAddress" class="font-bold text-green-800"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-8">
+                                <label class="flex items-start cursor-pointer">
+                                    <input type="checkbox" id="terms" name="terms" 
+                                           class="mt-1 ml-3 w-5 h-5 text-green-600 rounded focus:ring-green-500" required>
+                                    <span class="text-sm text-gray-600">
+                                        أوافق على 
+                                        <a href="#" class="text-green-600 hover:text-green-800 font-medium">الشروط والأحكام</a>
+                                        و
+                                        <a href="#" class="text-green-600 hover:text-green-800 font-medium">سياسة الخصوصية</a>
+                                        للمنصة. وأقر بأن جميع البيانات المقدمة صحيحة.
+                                    </span>
+                                </label>
+                                <div id="termsError" class="text-red-500 text-sm mt-1 hidden"></div>
+                            </div>
+                            
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
+                                <div class="flex items-start">
+                                    <i class="fas fa-info-circle text-blue-600 ml-3 text-xl mt-1"></i>
+                                    <div>
+                                        <p class="font-bold text-blue-800">تأكيد البريد الإلكتروني</p>
+                                        <p class="text-sm text-blue-600">سيتم إرسال رابط تأكيد إلى بريدك الإلكتروني بعد إنشاء الحساب</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between mt-8">
+                                <button type="button" onclick="prevStep()" 
+                                        class="px-8 py-3 border border-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-50 transition duration-300">
+                                    <i class="fas fa-arrow-right ml-2"></i> السابق
+                                </button>
+                                
+                                <button type="submit" id="submitBtn"
+                                        class="px-8 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition duration-300 transform hover:scale-105">
+                                    إنشاء الحساب <i class="fas fa-user-plus mr-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div class="mt-8 pt-8 border-t border-gray-200 text-center">
+                        <p class="text-gray-600">
+                            لديك حساب بالفعل؟ 
+                            <a href="{{ url_for('login') }}" class="text-green-600 hover:text-green-800 font-medium">
+                                تسجيل الدخول
+                            </a>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Benefits Section -->
+                <div class="bg-gradient-to-br from-green-50 to-green-100 p-8">
+                    <div class="text-center">
+                        <h3 class="text-xl font-bold text-green-800 mb-4">فوائد إنشاء حساب</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+                                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-bolt text-3xl text-green-600"></i>
+                                </div>
+                                <h4 class="font-bold mb-2 text-green-800">طلبات أسرع</h4>
+                                <p class="text-sm text-gray-600">احفظ بياناتك لتجربة طلبات أسرع</p>
+                            </div>
+                            
+                            <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+                                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-history text-3xl text-green-600"></i>
+                                </div>
+                                <h4 class="font-bold mb-2 text-green-800">تتبع الطلبات</h4>
+                                <p class="text-sm text-gray-600">تابع طلباتك خطوة بخطوة</p>
+                            </div>
+                            
+                            <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+                                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-gift text-3xl text-green-600"></i>
+                                </div>
+                                <h4 class="font-bold mb-2 text-green-800">عروض حصرية</h4>
+                                <p class="text-sm text-gray-600">احصل على عروض وخصومات خاصة</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/action.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/action2.js') }}"></script>
+    <script>
+        let currentStep = 1;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle user type change
+            document.querySelectorAll('input[name="userType"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const companyInfo = document.getElementById('companyInfo');
+                    if (this.value === 'company') {
+                        companyInfo.classList.remove('hidden');
+                        companyInfo.classList.add('block');
+                    } else {
+                        companyInfo.classList.add('hidden');
+                        companyInfo.classList.remove('block');
+                    }
+                });
+            });
+        });
+        
+        function updateProgressSteps() {
+            // Update step 1
+            if (currentStep >= 1) {
+                document.getElementById('step1-circle').className = 'w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold';
+                document.getElementById('step1-title').className = 'font-bold text-green-800';
+                document.getElementById('progress1').className = 'h-1 flex-1 bg-green-200 mx-4';
+            }
+            
+            // Update step 2
+            if (currentStep >= 2) {
+                document.getElementById('step2-circle').className = 'w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold';
+                document.getElementById('step2-title').className = 'font-bold text-green-800';
+                document.getElementById('progress2').className = 'h-1 flex-1 bg-green-200 mx-4';
+            } else {
+                document.getElementById('step2-circle').className = 'w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold';
+                document.getElementById('step2-title').className = 'font-bold text-gray-600';
+                document.getElementById('progress2').className = 'h-1 flex-1 bg-gray-200 mx-4';
+            }
+            
+            // Update step 3
+            if (currentStep >= 3) {
+                document.getElementById('step3-circle').className = 'w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold';
+                document.getElementById('step3-title').className = 'font-bold text-green-800';
+            } else {
+                document.getElementById('step3-circle').className = 'w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold';
+                document.getElementById('step3-title').className = 'font-bold text-gray-600';
+            }
+        }
+        
+        function nextStep() {
+            if (currentStep === 1) {
+                if (!validateStep1()) return;
+                showStep2();
+            } else if (currentStep === 2) {
+                if (!validateStep2()) return;
+                showStep3();
+            }
+            updateProgressSteps();
+        }
+        
+        function prevStep() {
+            if (currentStep === 2) {
+                showStep1();
+            } else if (currentStep === 3) {
+                showStep2();
+            }
+            updateProgressSteps();
+        }
+        
+        function validateStep1() {
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Clear all errors
+            document.getElementById('nameError').classList.add('hidden');
+            document.getElementById('emailError').classList.add('hidden');
+            document.getElementById('phoneError').classList.add('hidden');
+            document.getElementById('passwordError').classList.add('hidden');
+            document.getElementById('confirmPasswordError').classList.add('hidden');
+            
+            let isValid = true;
+            
+            if (!name) {
+                showError('nameError', 'يرجى إدخال الاسم');
+                isValid = false;
+            } else if (name.length < 3) {
+                showError('nameError', 'الاسم يجب أن يكون 3 أحرف على الأقل');
+                isValid = false;
+            }
+            
+            if (!email) {
+                showError('emailError', 'يرجى إدخال البريد الإلكتروني');
+                isValid = false;
+            } else if (!validateEmail(email)) {
+                showError('emailError', 'البريد الإلكتروني غير صالح');
+                isValid = false;
+            }
+            
+            if (!phone) {
+                showError('phoneError', 'يرجى إدخال رقم الهاتف');
+                isValid = false;
+            } else if (!validatePhone(phone)) {
+                showError('phoneError', 'رقم الهاتف غير صالح (يجب أن يبدأ بـ 01 ويتبعه 9 أرقام)');
+                isValid = false;
+            }
+            
+            if (!password) {
+                showError('passwordError', 'يرجى إدخال كلمة المرور');
+                isValid = false;
+            } else if (password.length < 6) {
+                showError('passwordError', 'كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+                isValid = false;
+            }
+            
+            if (!confirmPassword) {
+                showError('confirmPasswordError', 'يرجى تأكيد كلمة المرور');
+                isValid = false;
+            } else if (password !== confirmPassword) {
+                showError('confirmPasswordError', 'كلمتا المرور غير متطابقتين');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        function validateStep2() {
+            const governorate = document.getElementById('governorate').value;
+            const address = document.getElementById('address').value.trim();
+            const userType = document.querySelector('input[name="userType"]:checked').value;
+            
+            document.getElementById('governorateError').classList.add('hidden');
+            document.getElementById('addressError').classList.add('hidden');
+            document.getElementById('companyNameError').classList.add('hidden');
+            
+            let isValid = true;
+            
+            if (!governorate) {
+                showError('governorateError', 'يرجى اختيار المحافظة');
+                isValid = false;
+            }
+            
+            if (!address) {
+                showError('addressError', 'يرجى إدخال العنوان');
+                isValid = false;
+            }
+            
+            if (userType === 'company') {
+                const companyName = document.getElementById('companyName').value.trim();
+                if (!companyName) {
+                    showError('companyNameError', 'يرجى إدخال اسم الشركة');
+                    isValid = false;
+                }
+            }
+            
+            return isValid;
+        }
+        
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+        }
+        
+        function showStep2() {
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            currentStep = 2;
+        }
+        
+        function showStep1() {
+            document.getElementById('step1').classList.remove('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            currentStep = 1;
+        }
+        
+        function showStep3() {
+            document.getElementById('reviewName').textContent = document.getElementById('name').value;
+            document.getElementById('reviewEmail').textContent = document.getElementById('email').value;
+            document.getElementById('reviewPhone').textContent = document.getElementById('phone').value;
+            
+            const userType = document.querySelector('input[name="userType"]:checked').value;
+            document.getElementById('reviewType').textContent = userType === 'individual' ? 'فردي' : 'شركة';
+            
+            document.getElementById('reviewGovernorate').textContent = document.getElementById('governorate').value;
+            document.getElementById('reviewAddress').textContent = document.getElementById('address').value;
+            
+            if (userType === 'company') {
+                document.getElementById('reviewCompany').classList.remove('hidden');
+                document.getElementById('reviewCompanyName').textContent = document.getElementById('companyName').value || '---';
+                
+                const taxNumber = document.getElementById('taxNumber').value;
+                if (taxNumber) {
+                    document.getElementById('reviewTaxDiv').classList.remove('hidden');
+                    document.getElementById('reviewTaxNumber').textContent = taxNumber;
+                } else {
+                    document.getElementById('reviewTaxDiv').classList.add('hidden');
+                }
+            } else {
+                document.getElementById('reviewCompany').classList.add('hidden');
+                document.getElementById('reviewTaxDiv').classList.add('hidden');
+            }
+            
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.remove('hidden');
+            currentStep = 3;
+        }
+        
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+        
+        function validatePhone(phone) {
+            const re = /^01[0125][0-9]{8}$/;
+            return re.test(phone);
+        }
+        
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> جاري إنشاء الحساب...';
+                submitBtn.disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>

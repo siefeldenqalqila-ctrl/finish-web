@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء طلب جديد - Eco Paper Recycling</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .quantity-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #d1d5db;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quantity-btn:hover {
+            background-color: #f3f4f6;
+        }
+        .quantity-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-green-800 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2 space-x-reverse">
+                <i class="fas fa-recycle text-2xl"></i>
+                <a href="{{ url_for('base') }}" class="text-xl font-bold">Eco Paper Recycling</a>
+            </div>
+            
+            <div class="hidden md:flex items-center space-x-6 space-x-reverse">
+                <a href="{{ url_for('base') }}" class="hover:text-green-300">
+                    <i class="fas fa-home ml-2"></i>الرئيسية
+                </a>
+                <a href="{{ url_for('product') }}" class="hover:text-green-300">
+                    <i class="fas fa-box ml-2"></i>المنتجات
+                </a>
+                <a href="{{ url_for('create_order') }}" class="hover:text-green-300 font-bold">
+                    <i class="fas fa-shopping-cart ml-2"></i>طلب جديد
+                </a>
+                <button id="logoutBtn" class="text-red-300 hover:text-red-400">
+                    <i class="fas fa-sign-out-alt ml-2"></i>تسجيل الخروج
+                </button>
+            </div>
+            
+            <button id="mobileMenuBtn" class="md:hidden text-2xl">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <div id="mobileMenu" class="hidden md:hidden mt-4 space-y-3 pr-4 bg-green-700 p-4 rounded-lg">
+            <a href="{{ url_for('base') }}" class="block hover:text-green-300">الرئيسية</a>
+            <a href="{{ url_for('product') }}" class="block hover:text-green-300">المنتجات</a>
+            <a href="{{ url_for('create_order') }}" class="block hover:text-green-300 font-bold">طلب جديد</a>
+            <button id="logoutBtnMobile" class="block text-red-300 hover:text-red-400">تسجيل الخروج</button>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="fixed top-4 right-4 z-50">
+                    <div class="bg-{% if category == 'success' %}green{% else %}red{% endif %}-100 border border-{% if category == 'success' %}green{% else %}red{% endif %}-400 text-{% if category == 'success' %}green{% else %}red{% endif %}-700 px-6 py-4 rounded-lg shadow-lg flex items-center">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} ml-3 text-xl"></i>
+                        <span class="font-medium">{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="mr-6">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-10">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold">
+                        1
+                    </div>
+                    <div class="mr-4">
+                        <p class="font-bold text-green-800">اختيار المنتجات</p>
+                        <p class="text-sm text-gray-500">اختر المنتجات والكميات</p>
+                    </div>
+                </div>
+                
+                <div class="h-1 flex-1 bg-gray-200 mx-4"></div>
+                
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold">
+                        2
+                    </div>
+                    <div class="mr-4">
+                        <p class="font-bold text-gray-600">تفاصيل الاستلام</p>
+                        <p class="text-sm text-gray-500">معلومات التوصيل</p>
+                    </div>
+                </div>
+                
+                <div class="h-1 flex-1 bg-gray-200 mx-4"></div>
+                
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold">
+                        3
+                    </div>
+                    <div class="mr-4">
+                        <p class="font-bold text-gray-600">الدفع</p>
+                        <p class="text-sm text-gray-500">اختيار طريقة الدفع</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <h2 class="text-xl font-bold text-green-800 mb-4">اختر المنتجات</h2>
+                    
+                    <div class="mb-6">
+                        <div class="relative">
+                            <input type="text" id="productSearch" 
+                                   class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                   placeholder="ابحث عن منتج...">
+                            <button class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-green-600">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="productsList" class="space-y-4">
+                        <div class="text-center py-8">
+                            <div class="loading-spinner mx-auto"></div>
+                            <p class="text-gray-500 mt-2">جاري تحميل المنتجات...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-bold text-green-800 mb-4">المنتجات المختارة</h2>
+                    
+                    <div id="selectedProducts" class="mb-6">
+                        <div class="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                            <i class="fas fa-shopping-cart text-4xl text-gray-300 mb-3"></i>
+                            <p class="text-gray-500">لم تقم باختيار أي منتجات بعد</p>
+                            <p class="text-sm text-gray-400 mt-1">اختر من القائمة أعلاه</p>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 pt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-gray-600">عدد المنتجات:</span>
+                            <span id="totalItems" class="font-bold">0</span>
+                        </div>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-gray-600">الكمية الإجمالية:</span>
+                            <span id="totalQuantity" class="font-bold">0 كجم</span>
+                        </div>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-gray-600">المجموع الفرعي:</span>
+                            <span id="subtotal" class="font-bold">0 ج.م</span>
+                        </div>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-gray-600">رسوم التوصيل:</span>
+                            <span id="deliveryFee" class="font-bold">0 ج.م</span>
+                        </div>
+                        <div class="flex justify-between items-center text-lg font-bold text-green-800 border-t border-gray-300 pt-4">
+                            <span>الإجمالي:</span>
+                            <span id="totalAmount">0 ج.م</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <h2 class="text-xl font-bold text-green-800 mb-4">معلومات الاستلام</h2>
+                    
+                    <form id="deliveryForm" class="space-y-4">
+                        <div>
+                            <label for="deliveryDate" class="block text-sm font-medium text-gray-700 mb-2">
+                                تاريخ الاستلام *
+                            </label>
+                            <input type="date" id="deliveryDate" name="deliveryDate" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                   required>
+                            <div id="dateError" class="text-red-500 text-sm mt-1 hidden"></div>
+                        </div>
+                        
+                        <div>
+                            <label for="deliveryTime" class="block text-sm font-medium text-gray-700 mb-2">
+                                وقت الاستلام *
+                            </label>
+                            <select id="deliveryTime" name="deliveryTime" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                    required>
+                                <option value="">اختر الوقت المناسب</option>
+                                <option value="9:00-12:00">9:00 صباحاً - 12:00 ظهراً</option>
+                                <option value="12:00-15:00">12:00 ظهراً - 3:00 عصراً</option>
+                                <option value="15:00-18:00">3:00 عصراً - 6:00 مساءً</option>
+                                <option value="18:00-21:00">6:00 مساءً - 9:00 مساءً</option>
+                            </select>
+                            <div id="timeError" class="text-red-500 text-sm mt-1 hidden"></div>
+                        </div>
+                        
+                        <div>
+                            <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
+                                ملاحظات إضافية
+                            </label>
+                            <textarea id="notes" name="notes" rows="3"
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                      placeholder="أي تعليمات خاصة للاستلام..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <h2 class="text-xl font-bold text-green-800 mb-4">معلومات العميل</h2>
+                    
+                    <div id="customerInfo">
+                        <div class="text-center py-4">
+                            <div class="loading-spinner mx-auto"></div>
+                            <p class="text-gray-500 mt-2">جاري تحميل معلوماتك...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="space-y-4">
+                        <button onclick="validateOrder()" 
+                                class="w-full bg-green-600 text-white py-4 rounded-lg font-bold hover:bg-green-700 transition duration-300 flex items-center justify-center text-lg">
+                            <i class="fas fa-shopping-cart ml-3"></i>
+                            متابعة إلى الدفع
+                        </button>
+                        
+                        <a href="{{ url_for('product') }}" 
+                           class="block w-full border border-green-600 text-green-600 py-3 rounded-lg font-bold hover:bg-green-50 transition duration-300 text-center">
+                            <i class="fas fa-arrow-left ml-2"></i>
+                            إضافة منتجات أخرى
+                        </a>
+                        
+                        <a href="{{ url_for('base') }}" 
+                           class="block w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-bold hover:bg-gray-50 transition duration-300 text-center">
+                            <i class="fas fa-times ml-2"></i>
+                            إلغاء الطلب
+                        </a>
+                    </div>
+                    
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h4 class="font-bold text-green-800 mb-2">معلومات مهمة:</h4>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li>• خدمة الاستلام مجانية للطلبات فوق 50 كجم</li>
+                            <li>• يمكنك تغيير التفاصيل قبل الدفع</li>
+                            <li>• يتم الدفع بعد فحص المنتجات واستلامها</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/action.js') }}"></script>
+    <script>
+        let allProducts = [];
+        let selectedProducts = [];
+        let customerData = {};
+        const deliveryFee = 20;
+        
+        // تنظيف localStorage من المنتجات القديمة
+        (function clearOldProductData() {
+            if (localStorage.getItem('products')) {
+                console.log('Clearing old products from localStorage');
+                localStorage.removeItem('products');
+            }
+        })();
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in
+            API.getUserData().then(response => {
+                if (!response.success) {
+                    window.location.href = "{{ url_for('login') }}";
+                    return;
+                }
+                
+                customerData = response.user;
+                loadCustomerInfo();
+            });
+            
+            loadProducts();
+            
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('deliveryDate').min = tomorrow.toISOString().split('T')[0];
+            
+            const nextWeek = new Date();
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            document.getElementById('deliveryDate').max = nextWeek.toISOString().split('T')[0];
+            
+            document.getElementById('deliveryDate').value = tomorrow.toISOString().split('T')[0];
+
+            // Load cart from localStorage if exists
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            if (cart.length > 0) {
+                selectedProducts = cart;
+                updateSelectedProducts();
+            }
+
+            // Search functionality
+            document.getElementById('productSearch').addEventListener('input', filterProducts);
+
+            // Logout buttons
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('logoutBtnMobile').addEventListener('click', logout);
+            
+            // Mobile menu
+            document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+                const menu = document.getElementById('mobileMenu');
+                menu.classList.toggle('hidden');
+            });
+        });
+        
+        async function loadProducts() {
+            try {
+                console.log('Fetching products from API...');
+                const response = await fetch('/api/products');
+                const result = await response.json();
+                
+                if (result.success && result.products) {
+                    allProducts = result.products;
+                    console.log('Products loaded from API:', allProducts.length);
+                } else {
+                    allProducts = [];
+                }
+                
+                displayProducts(allProducts);
+                
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('productsList').innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-exclamation-triangle text-4xl text-red-400 mb-4"></i>
+                        <p class="text-gray-500">حدث خطأ في تحميل المنتجات</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function filterProducts() {
+            const searchTerm = document.getElementById('productSearch').value.toLowerCase();
+            
+            const filtered = allProducts.filter(product => 
+                product.name.toLowerCase().includes(searchTerm) ||
+                (product.description && product.description.toLowerCase().includes(searchTerm)) ||
+                (product.category && product.category.toLowerCase().includes(searchTerm))
+            );
+            
+            displayProducts(filtered);
+        }
+        
+        function displayProducts(products) {
+            const productsList = document.getElementById('productsList');
+            
+            if (!products || products.length === 0) {
+                productsList.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-box-open text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">لا توجد منتجات متاحة حالياً</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let productsHTML = '';
+            
+            products.forEach(product => {
+                const minQty = product.min_quantity || product.minQuantity || 1;
+                const imageUrl = product.image && product.image !== '' ? product.image : 'https://via.placeholder.com/100?text=منتج';
+                productsHTML += `
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-16 h-16 rounded-lg overflow-hidden ml-4">
+                                <img src="${imageUrl}" alt="${product.name}" 
+                                     class="w-full h-full object-cover"
+                                     onerror="this.src='https://via.placeholder.com/100?text=منتج'">
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-green-800">${product.name}</h3>
+                                <p class="text-sm text-gray-600">الحد الأدنى: ${minQty} ${product.unit || 'كجم'}</p>
+                                <p class="text-green-700 font-bold">${product.price} ج.م / ${product.unit || 'كجم'}</p>
+                                ${product.company_name ? `<p class="text-xs text-gray-500">${product.company_name}</p>` : ''}
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <div class="flex items-center mr-4">
+                                <button onclick="decreaseQuantity(${product.id})" 
+                                        class="quantity-btn rounded-r-lg">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" id="qty-${product.id}" 
+                                       class="w-16 h-10 text-center border-y border-gray-300"
+                                       value="0" min="0" readonly>
+                                <button onclick="increaseQuantity(${product.id})" 
+                                        class="quantity-btn rounded-l-lg">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            
+                            <button onclick="addToCart(${product.id})" 
+                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300">
+                                <i class="fas fa-plus ml-1"></i> أضف
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            productsList.innerHTML = productsHTML;
+        }
+        
+        function loadCustomerInfo() {
+            const customerInfo = document.getElementById('customerInfo');
+            
+            if (customerData) {
+                customerInfo.innerHTML = `
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-gray-500">الاسم</p>
+                            <p class="font-bold">${customerData.name || 'غير محدد'}</p>
+                        </div>
+                        
+                        <div>
+                            <p class="text-sm text-gray-500">رقم الهاتف</p>
+                            <p class="font-bold">${customerData.phone || 'غير محدد'}</p>
+                        </div>
+                        
+                        <div>
+                            <p class="text-sm text-gray-500">البريد الإلكتروني</p>
+                            <p class="font-bold">${customerData.email || 'غير محدد'}</p>
+                        </div>
+                        
+                        <div>
+                            <p class="text-sm text-gray-500">نوع الحساب</p>
+                            <p class="font-bold">${customerData.type === 'company' ? 'شركة' : 'فرد'}</p>
+                        </div>
+                        
+                        <a href="{{ url_for('profile') }}" 
+                           class="inline-block text-green-600 hover:text-green-800 text-sm mt-2">
+                            <i class="fas fa-edit ml-1"></i> تعديل المعلومات
+                        </a>
+                    </div>
+                `;
+            }
+        }
+        
+        function increaseQuantity(productId) {
+            const product = allProducts.find(p => p.id == productId);
+            if (!product) return;
+            
+            const minQty = product.min_quantity || product.minQuantity || 1;
+            const input = document.getElementById(`qty-${productId}`);
+            
+            let currentValue = parseInt(input.value) || 0;
+            currentValue += minQty;
+            input.value = currentValue;
+        }
+        
+        function decreaseQuantity(productId) {
+            const product = allProducts.find(p => p.id == productId);
+            if (!product) return;
+            
+            const minQty = product.min_quantity || product.minQuantity || 1;
+            const input = document.getElementById(`qty-${productId}`);
+            
+            let currentValue = parseInt(input.value) || 0;
+            if (currentValue > 0) {
+                currentValue -= minQty;
+                if (currentValue < 0) currentValue = 0;
+                input.value = currentValue;
+            }
+        }
+        
+        function addToCart(productId) {
+            const product = allProducts.find(p => p.id == productId);
+            if (!product) return;
+            
+            const minQty = product.min_quantity || product.minQuantity || 1;
+            const input = document.getElementById(`qty-${productId}`);
+            const quantity = parseInt(input.value) || 0;
+            
+            if (quantity < minQty) {
+                showMessage(`يرجى تحديد كمية لا تقل عن ${minQty} ${product.unit || 'كجم'}`, 'error');
+                return;
+            }
+            
+            const existingIndex = selectedProducts.findIndex(item => item.id === productId);
+            
+            if (existingIndex !== -1) {
+                selectedProducts[existingIndex].quantity = quantity;
+            } else {
+                selectedProducts.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    quantity: quantity,
+                    unit: product.unit || 'كجم',
+                    minQuantity: minQty,
+                    image: product.image,
+                    company_id: product.company_id,
+                    company_name: product.company_name
+                });
+            }
+            
+            input.value = 0;
+            
+            updateSelectedProducts();
+            
+            showMessage('تمت إضافة المنتج إلى الطلب', 'success');
+        }
+        
+        function updateSelectedProducts() {
+            const container = document.getElementById('selectedProducts');
+            
+            if (selectedProducts.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                        <i class="fas fa-shopping-cart text-4xl text-gray-300 mb-3"></i>
+                        <p class="text-gray-500">لم تقم باختيار أي منتجات بعد</p>
+                        <p class="text-sm text-gray-400 mt-1">اختر من القائمة أعلاه</p>
+                    </div>
+                `;
+                localStorage.removeItem('cart');
+            } else {
+                let productsHTML = '';
+                let totalItems = 0;
+                let totalQuantity = 0;
+                let subtotal = 0;
+                
+                selectedProducts.forEach((product, index) => {
+                    const productTotal = product.price * product.quantity;
+                    totalItems++;
+                    totalQuantity += product.quantity;
+                    subtotal += productTotal;
+                    const imageUrl = product.image && product.image !== '' ? product.image : 'https://via.placeholder.com/50';
+                    
+                    productsHTML += `
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-3">
+                            <div class="flex items-center">
+                                <img src="${imageUrl}" 
+                                     class="w-12 h-12 rounded-lg object-cover ml-3"
+                                     onerror="this.src='https://via.placeholder.com/50'">
+                                <div>
+                                    <h4 class="font-bold text-green-800">${product.name}</h4>
+                                    <p class="text-sm text-gray-600">${product.quantity} ${product.unit}</p>
+                                    <p class="text-green-700 font-bold">${product.price} ج.م / ${product.unit}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <span class="font-bold text-lg mr-4">${productTotal.toFixed(2)} ج.م</span>
+                                <button onclick="removeProduct(${index})" 
+                                        class="text-red-500 hover:text-red-700">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = productsHTML;
+                
+                const calculatedDeliveryFee = totalQuantity >= 50 ? 0 : deliveryFee;
+                const total = subtotal + calculatedDeliveryFee;
+                
+                document.getElementById('totalItems').textContent = totalItems;
+                document.getElementById('totalQuantity').textContent = totalQuantity + ' كجم';
+                document.getElementById('subtotal').textContent = subtotal.toFixed(2) + ' ج.م';
+                document.getElementById('deliveryFee').textContent = calculatedDeliveryFee + ' ج.م';
+                document.getElementById('totalAmount').textContent = total.toFixed(2) + ' ج.م';
+                
+                // Save to localStorage
+                localStorage.setItem('cart', JSON.stringify(selectedProducts));
+            }
+        }
+        
+        function removeProduct(index) {
+            selectedProducts.splice(index, 1);
+            updateSelectedProducts();
+            showMessage('تمت إزالة المنتج من الطلب', 'info');
+        }
+        
+        function validateOrder() {
+            if (selectedProducts.length === 0) {
+                showMessage('يرجى اختيار منتج واحد على الأقل', 'error');
+                return;
+            }
+            
+            const deliveryDate = document.getElementById('deliveryDate').value;
+            if (!deliveryDate) {
+                document.getElementById('dateError').textContent = 'يرجى تحديد تاريخ الاستلام';
+                document.getElementById('dateError').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('dateError').classList.add('hidden');
+            
+            const deliveryTime = document.getElementById('deliveryTime').value;
+            if (!deliveryTime) {
+                document.getElementById('timeError').textContent = 'يرجى تحديد وقت الاستلام';
+                document.getElementById('timeError').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('timeError').classList.add('hidden');
+            
+            const totalQuantity = selectedProducts.reduce((sum, p) => sum + p.quantity, 0);
+            const subtotal = selectedProducts.reduce((sum, p) => sum + (p.price * p.quantity), 0);
+            const calculatedDeliveryFee = totalQuantity >= 50 ? 0 : deliveryFee;
+            const total = subtotal + calculatedDeliveryFee;
+            
+            const orderData = {
+                products: selectedProducts,
+                quantity: totalQuantity,
+                subtotal: subtotal,
+                delivery_fee: calculatedDeliveryFee,
+                total: total,
+                delivery_date: deliveryDate,
+                delivery_time: deliveryTime,
+                notes: document.getElementById('notes').value,
+                payment_method: 'cash_on_delivery'
+            };
+            
+            localStorage.setItem('tempOrder', JSON.stringify(orderData));
+            
+            window.location.href = "{{ url_for('payment') }}";
+        }
+        
+        async function logout() {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                const result = await API.logout();
+                if (result.success) {
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('userData');
+                    localStorage.removeItem('cart');
+                    localStorage.removeItem('products');
+                    window.location.href = "{{ url_for('index') }}";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

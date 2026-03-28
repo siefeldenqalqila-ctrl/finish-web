@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التحقق من الرمز - Eco Paper Recycling</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-green-800 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2 space-x-reverse">
+                <i class="fas fa-recycle text-2xl"></i>
+                <a href="{{ url_for('index') }}" class="text-xl font-bold">Eco Paper Recycling</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full">
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div class="bg-gradient-to-r from-green-600 to-green-800 text-white p-8 text-center">
+                    <i class="fas fa-mobile-alt text-5xl mb-4"></i>
+                    <h2 class="text-2xl font-bold">التحقق من الرمز</h2>
+                    <p class="text-green-100 mt-2" id="emailDisplay">تم إرسال رمز التحقق إلى بريدك الإلكتروني</p>
+                </div>
+                
+                <div class="p-8">
+                    <div class="text-center mb-8">
+                        <p class="text-gray-600 mb-2">أدخل الرمز المكون من 4 أرقام الذي استلمته</p>
+                        <p class="text-sm text-gray-500">الرمز صالح لمدة 10 دقائق</p>
+                    </div>
+                    
+                    <form id="otpForm" class="space-y-6">
+                        <div class="flex justify-center space-x-3 space-x-reverse mb-6">
+                            <input type="text" maxlength="1" 
+                                   class="w-16 h-16 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 otp-input"
+                                   oninput="moveToNext(this, 1)">
+                            <input type="text" maxlength="1" 
+                                   class="w-16 h-16 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 otp-input"
+                                   oninput="moveToNext(this, 2)">
+                            <input type="text" maxlength="1" 
+                                   class="w-16 h-16 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 otp-input"
+                                   oninput="moveToNext(this, 3)">
+                            <input type="text" maxlength="1" 
+                                   class="w-16 h-16 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 otp-input"
+                                   oninput="moveToNext(this, 4)">
+                        </div>
+                        
+                        <div id="otpError" class="text-red-500 text-sm text-center hidden"></div>
+                        
+                        <div class="flex flex-col space-y-4">
+                            <button type="submit" 
+                                    class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-bold hover:bg-green-700 transition duration-300 flex items-center justify-center">
+                                <i class="fas fa-check-circle ml-2"></i>
+                                التحقق الآن
+                            </button>
+                            
+                            <button type="button" onclick="resendOTP()" 
+                                    class="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-bold hover:bg-gray-50 transition duration-300 flex items-center justify-center">
+                                <i class="fas fa-redo ml-2"></i>
+                                إعادة إرسال الرمز
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <a href="{{ url_for('login') }}" class="text-green-600 hover:text-green-800 font-medium">
+                                <i class="fas fa-arrow-right ml-2"></i>
+                                العودة إلى تسجيل الدخول
+                            </a>
+                        </div>
+                    </form>
+                    
+                    <div class="mt-8 pt-8 border-t border-gray-200 text-center">
+                        <p class="text-gray-600 mb-2">ينتهي الرمز خلال:</p>
+                        <div id="timer" class="text-2xl font-bold text-green-600">10:00</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div class="flex items-start">
+                    <i class="fas fa-info-circle text-blue-600 mt-1 ml-3"></i>
+                    <div>
+                        <h4 class="font-bold text-blue-800 mb-1">ملاحظة:</h4>
+                        <p class="text-sm text-blue-700">إذا لم تستلم الرمز، تحقق من مجلد البريد المزعج (Spam) أو اتصل بالدعم الفني.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/action.js') }}"></script>
+    <script>
+        let timerInterval;
+        let timeLeft = 600; // 10 minutes in seconds
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const email = urlParams.get('email');
+            if (email) {
+                document.getElementById('emailDisplay').textContent = `تم إرسال رمز التحقق إلى: ${email}`;
+            }
+            
+            startTimer();
+            
+            const form = document.getElementById('otpForm');
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const otpInputs = document.querySelectorAll('.otp-input');
+                let otp = '';
+                otpInputs.forEach(input => {
+                    otp += input.value;
+                });
+                
+                if (otp.length !== 4) {
+                    document.getElementById('otpError').textContent = 'يرجى إدخال الرمز المكون من 4 أرقام';
+                    document.getElementById('otpError').classList.remove('hidden');
+                    return;
+                }
+                
+                if (verifyOTP(otp)) {
+                    showMessage('تم التحقق بنجاح', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('reset_password') }}";
+                    }, 1000);
+                } else {
+                    document.getElementById('otpError').textContent = 'الرمز غير صحيح، يرجى المحاولة مرة أخرى';
+                    document.getElementById('otpError').classList.remove('hidden');
+                }
+            });
+            
+            document.querySelector('.otp-input').focus();
+        });
+        
+        function startTimer() {
+            clearInterval(timerInterval);
+            updateTimerDisplay();
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('timer').textContent = 'انتهى الوقت';
+                    document.getElementById('timer').classList.remove('text-green-600');
+                    document.getElementById('timer').classList.add('text-red-600');
+                }
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function moveToNext(currentInput, nextIndex) {
+            currentInput.value = currentInput.value.replace(/[^0-9]/g, '');
+            
+            if (currentInput.value.length === 1 && nextIndex <= 4) {
+                const nextInput = document.querySelector(`.otp-input:nth-child(${nextIndex})`);
+                if (nextInput) {
+                    nextInput.focus();
+                }
+            }
+            
+            document.getElementById('otpError').classList.add('hidden');
+        }
+        
+        function resendOTP() {
+            if (timeLeft > 0) {
+                showMessage('الرجاء الانتظار قبل إعادة الإرسال', 'info');
+                return;
+            }
+            
+            showMessage('تم إعادة إرسال الرمز بنجاح', 'success');
+            
+            timeLeft = 600;
+            startTimer();
+            
+            const otpInputs = document.querySelectorAll('.otp-input');
+            otpInputs.forEach(input => {
+                input.value = '';
+            });
+            
+            otpInputs[0].focus();
+        }
+        
+        function verifyOTP(otp) {
+            return otp === '1234';
+        }
+    </script>
+</body>
+</html>

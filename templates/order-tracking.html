@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تتبع الطلب - Eco Paper Recycling</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-green-800 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2 space-x-reverse">
+                <i class="fas fa-recycle text-2xl"></i>
+                <a href="{{ url_for('base') }}" class="text-xl font-bold">Eco Paper Recycling</a>
+            </div>
+            
+            <div class="hidden md:flex items-center space-x-6 space-x-reverse">
+                <a href="{{ url_for('base') }}" class="hover:text-green-300">
+                    <i class="fas fa-home ml-2"></i>الرئيسية
+                </a>
+                <a href="{{ url_for('orders_history') }}" class="hover:text-green-300">
+                    <i class="fas fa-clipboard-list ml-2"></i>طلباتي
+                </a>
+                <button id="logoutBtn" class="text-red-300 hover:text-red-400">
+                    <i class="fas fa-sign-out-alt ml-2"></i>تسجيل الخروج
+                </button>
+            </div>
+            
+            <button id="mobileMenuBtn" class="md:hidden text-2xl">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <div id="mobileMenu" class="hidden md:hidden mt-4 space-y-3 pr-4 bg-green-700 p-4 rounded-lg">
+            <a href="{{ url_for('base') }}" class="block hover:text-green-300">الرئيسية</a>
+            <a href="{{ url_for('orders_history') }}" class="block hover:text-green-300">طلباتي</a>
+            <button id="logoutBtnMobile" class="block text-red-300 hover:text-red-400">تسجيل الخروج</button>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="fixed top-4 right-4 z-50">
+                    <div class="bg-{% if category == 'success' %}green{% else %}red{% endif %}-100 border border-{% if category == 'success' %}green{% else %}red{% endif %}-400 text-{% if category == 'success' %}green{% else %}red{% endif %}-700 px-6 py-4 rounded-lg shadow-lg flex items-center">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} ml-3 text-xl"></i>
+                        <span class="font-medium">{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="mr-6">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="mb-8 text-center">
+                <h1 class="text-3xl font-bold text-green-800 mb-2">تتبع حالة الطلب</h1>
+                <p class="text-gray-600">تابع طلبك خطوة بخطوة لحظة بلحظة</p>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="flex flex-col md:flex-row gap-4 items-center">
+                    <div class="flex-1">
+                        <input type="text" id="searchOrder" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                               placeholder="أدخل رقم الطلب (مثال: ORD20260326223556)">
+                    </div>
+                    <button onclick="searchOrder()" 
+                            class="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition duration-300">
+                        <i class="fas fa-search ml-2"></i>
+                        بحث
+                    </button>
+                    <a href="{{ url_for('orders_history') }}" 
+                       class="px-6 py-3 border border-green-600 text-green-600 rounded-lg font-bold hover:bg-green-50 transition duration-300">
+                        <i class="fas fa-history ml-2"></i>
+                        سجل الطلبات
+                    </a>
+                </div>
+            </div>
+            
+            <div id="orderTracking" class="bg-white rounded-xl shadow-lg p-8">
+                <div class="text-center py-12">
+                    <i class="fas fa-truck text-5xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-600 mb-2">أدخل رقم الطلب للبدء</h3>
+                    <p class="text-gray-500">استخدم حقل البحث أعلاه لإدخال رقم طلبك وتتبع حالته</p>
+                </div>
+            </div>
+            
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-green-50 p-6 rounded-xl">
+                    <div class="text-green-600 mb-3">
+                        <i class="fas fa-clock text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-green-800 mb-2">مدة التسليم</h3>
+                    <p class="text-sm text-gray-600">يتم التسليم خلال 24-48 ساعة من تأكيد الطلب</p>
+                </div>
+                
+                <div class="bg-blue-50 p-6 rounded-xl">
+                    <div class="text-blue-600 mb-3">
+                        <i class="fas fa-headset text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-blue-800 mb-2">الدعم الفني</h3>
+                    <p class="text-sm text-gray-600">متاح على مدار الساعة للإجابة على استفساراتك</p>
+                </div>
+                
+                <div class="bg-purple-50 p-6 rounded-xl">
+                    <div class="text-purple-600 mb-3">
+                        <i class="fas fa-map-marker-alt text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-purple-800 mb-2">تتبع حي</h3>
+                    <p class="text-sm text-gray-600">يمكنك متابعة موقع المندوب خلال مرحلة "في الطريق"</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Tracking Modal -->
+    <div id="liveTrackingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl">
+            <div class="flex justify-between items-center p-6 border-b">
+                <h3 class="text-xl font-bold text-green-800">التتبع الحي للمندوب</h3>
+                <button onclick="closeLiveTracking()" class="text-2xl text-gray-500 hover:text-gray-700">&times;</button>
+            </div>
+            
+            <div class="p-6">
+                <div class="text-center mb-6">
+                    <i class="fas fa-truck-moving text-4xl text-green-600 mb-4"></i>
+                    <h4 id="agentName" class="font-bold text-lg mb-2">جاري التحميل...</h4>
+                    <p class="text-gray-600">المندوب في طريقه إليك الآن</p>
+                </div>
+                
+                <div class="bg-gray-200 rounded-lg h-64 flex items-center justify-center mb-6">
+                    <div class="text-center">
+                        <i class="fas fa-map-marked-alt text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-600">خريطة التتبع</p>
+                        <p class="text-sm text-gray-500">(في التطبيق الحقيقي، هنا ستكون خريطة حية)</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-gray-600">رقم المندوب:</span>
+                        <span id="agentPhone" class="font-bold">-</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-gray-600">الوقت المتوقع للوصول:</span>
+                        <span id="eta" class="font-bold text-green-600">-</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-gray-600">المسافة المتبقية:</span>
+                        <span id="distance" class="font-bold">- كم</span>
+                    </div>
+                </div>
+                
+                <div class="mt-6 text-center">
+                    <button onclick="callAgent()" 
+                            class="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition duration-300 ml-3">
+                        <i class="fas fa-phone ml-2"></i>
+                        الاتصال بالمندوب
+                    </button>
+                    <button onclick="closeLiveTracking()" 
+                            class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-50 transition duration-300">
+                        إغلاق
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/action.js') }}"></script>
+    <script>
+        let currentOrder = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            API.getUserData().then(response => {
+                if (!response.success) {
+                    window.location.href = "{{ url_for('login') }}";
+                    return;
+                }
+            });
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderId = urlParams.get('order');
+            
+            if (orderId) {
+                document.getElementById('searchOrder').value = orderId;
+                loadOrderTracking(orderId);
+            }
+            
+            document.getElementById('searchOrder').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchOrder();
+                }
+            });
+
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('logoutBtnMobile').addEventListener('click', logout);
+            
+            document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+                const menu = document.getElementById('mobileMenu');
+                menu.classList.toggle('hidden');
+            });
+        });
+        
+        function searchOrder() {
+            const orderId = document.getElementById('searchOrder').value.trim();
+            
+            if (!orderId) {
+                showMessage('يرجى إدخال رقم الطلب', 'error');
+                return;
+            }
+            
+            loadOrderTracking(orderId);
+        }
+        
+        async function loadOrderTracking(orderId) {
+            try {
+                console.log('Fetching order for tracking:', orderId);
+                
+                // جلب الطلبات من API
+                const response = await fetch('/api/orders');
+                const result = await response.json();
+                
+                let order = null;
+                if (result.success && result.orders) {
+                    // البحث عن الطلب بالرقم
+                    order = result.orders.find(o => o.order_number === orderId || o.id == orderId);
+                }
+                
+                if (order) {
+                    console.log('Order found for tracking:', order);
+                    displayTrackingInfo(order);
+                } else {
+                    document.getElementById('orderTracking').innerHTML = `
+                        <div class="text-center py-12">
+                            <i class="fas fa-exclamation-triangle text-5xl text-yellow-500 mb-4"></i>
+                            <h3 class="text-xl font-bold text-gray-600 mb-2">لم يتم العثور على الطلب</h3>
+                            <p class="text-gray-500 mb-4">رقم الطلب "${orderId}" غير موجود</p>
+                            <a href="{{ url_for('orders_history') }}" class="text-green-600 hover:text-green-800">
+                                <i class="fas fa-history ml-2"></i> عرض سجل الطلبات
+                            </a>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading order:', error);
+                document.getElementById('orderTracking').innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
+                        <h3 class="text-xl font-bold text-gray-600 mb-2">حدث خطأ</h3>
+                        <p class="text-gray-500 mb-4">فشل في تحميل بيانات الطلب</p>
+                        <button onclick="searchOrder()" class="text-green-600 hover:text-green-800">
+                            <i class="fas fa-redo ml-2"></i> إعادة المحاولة
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        function displayTrackingInfo(order) {
+            const orderId = order.order_number || order.id;
+            const status = order.status || 'قيد المراجعة';
+            
+            // تحديد الخطوات بناءً على الحالة
+            const steps = [
+                { name: 'قيد المراجعة', completed: true, date: order.created_at },
+                { name: 'في الطريق', completed: status === 'في الطريق' || status === 'تم الاستلام' || status === 'مكتمل', date: null },
+                { name: 'تم الاستلام', completed: status === 'تم الاستلام' || status === 'مكتمل', date: null },
+                { name: 'مكتمل', completed: status === 'مكتمل', date: null }
+            ];
+            
+            let currentStep = 1;
+            if (status === 'في الطريق') currentStep = 2;
+            else if (status === 'تم الاستلام') currentStep = 3;
+            else if (status === 'مكتمل') currentStep = 4;
+            
+            let stepsHTML = '';
+            steps.forEach((step, index) => {
+                const isActive = index === currentStep - 1;
+                const isCompleted = step.completed;
+                
+                let stepClass = 'bg-gray-200 text-gray-600';
+                let iconClass = 'fas fa-circle';
+                let iconColor = 'text-gray-400';
+                
+                if (isCompleted) {
+                    stepClass = 'bg-green-100 text-green-800';
+                    iconClass = 'fas fa-check-circle';
+                    iconColor = 'text-green-600';
+                } else if (isActive) {
+                    stepClass = 'bg-yellow-100 text-yellow-800';
+                    iconClass = 'fas fa-spinner fa-spin';
+                    iconColor = 'text-yellow-600';
+                }
+                
+                stepsHTML += `
+                    <div class="flex items-start mb-8">
+                        <div class="flex flex-col items-center ml-4">
+                            <div class="w-12 h-12 rounded-full ${stepClass} flex items-center justify-center mb-2">
+                                <i class="${iconClass} ${iconColor} text-xl"></i>
+                            </div>
+                            ${index < steps.length - 1 ? 
+                                `<div class="h-16 w-1 bg-gray-200 ${isCompleted ? 'bg-green-300' : ''}"></div>` : 
+                                ''}
+                        </div>
+                        
+                        <div class="flex-1">
+                            <h4 class="font-bold text-lg mb-1">${step.name}</h4>
+                            ${step.date ? `<p class="text-sm text-gray-500">${formatDateTime(step.date)}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            let statusColor = 'text-gray-600';
+            if (status === 'مكتمل') statusColor = 'text-green-600';
+            else if (status === 'في الطريق') statusColor = 'text-blue-600';
+            else if (status === 'قيد المراجعة') statusColor = 'text-yellow-600';
+            
+            const container = document.getElementById('orderTracking');
+            
+            container.innerHTML = `
+                <div class="mb-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-green-800">طلب رقم: ${orderId}</h2>
+                            <p class="text-gray-600">حالة الطلب: <span class="font-bold ${statusColor}">${status}</span></p>
+                        </div>
+                        <button onclick="refreshTracking('${orderId}')" 
+                                class="px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition duration-300">
+                            <i class="fas fa-redo ml-2"></i> تحديث
+                        </button>
+                    </div>
+                    
+                    <div class="mb-8">
+                        ${stepsHTML}
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-green-800 mb-2">معلومات الطلب</h4>
+                            <p><span class="font-bold">التاريخ:</span> ${formatDate(order.created_at)}</p>
+                            <p><span class="font-bold">الإجمالي:</span> ${(order.total || 0).toFixed(2)} ج.م</p>
+                            <p><span class="font-bold">طريقة الدفع:</span> ${order.payment_method === 'cash_on_delivery' ? 'الدفع عند الاستلام' : (order.payment_method === 'vodafone_cash' ? 'فودافون كاش' : 'بطاقة بنكية')}</p>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-blue-800 mb-2">موعد الاستلام</h4>
+                            ${order.delivery_date ? `<p><span class="font-bold">التاريخ:</span> ${formatDate(order.delivery_date)}</p>` : ''}
+                            ${order.delivery_time ? `<p><span class="font-bold">الوقت:</span> ${order.delivery_time}</p>` : ''}
+                            ${order.delivery_date ? `<p class="text-sm text-gray-600 mt-2">سيتم التواصل معك لتأكيد الموعد</p>` : '<p class="text-gray-600">يتم تحديد موعد الاستلام قريباً</p>'}
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4">
+                        ${status === 'في الطريق' ? `
+                            <button onclick="openLiveTracking('${orderId}')" 
+                                    class="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition duration-300">
+                                <i class="fas fa-map-marker-alt ml-2"></i>
+                                التتبع الحي
+                            </button>
+                        ` : ''}
+                        
+                        <button onclick="contactSupport('${orderId}')" 
+                                class="px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition duration-300">
+                            <i class="fas fa-headset ml-2"></i>
+                            الاتصال بالدعم
+                        </button>
+                        
+                        <a href="{{ url_for('order_confirm') }}?order=${orderId}" 
+                           class="px-6 py-3 border border-green-600 text-green-600 rounded-lg font-bold hover:bg-green-50 transition duration-300">
+                            <i class="fas fa-file-alt ml-2"></i>
+                            عرض تفاصيل الطلب
+                        </a>
+                    </div>
+                    
+                    ${order.notes ? `
+                        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-bold text-gray-700 mb-2">ملاحظات إضافية</h4>
+                            <p class="text-gray-600">${order.notes}</p>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        async function refreshTracking(orderId) {
+            await loadOrderTracking(orderId);
+            showMessage('تم تحديث حالة الطلب', 'success');
+        }
+        
+        function openLiveTracking(orderId) {
+            // محاكاة بيانات المندوب
+            document.getElementById('agentName').textContent = 'محمد أحمد';
+            document.getElementById('agentPhone').textContent = '01234567890';
+            
+            const etaMinutes = Math.floor(Math.random() * 30) + 10;
+            const distance = (Math.random() * 5 + 1).toFixed(1);
+            
+            document.getElementById('eta').textContent = `بعد ${etaMinutes} دقيقة`;
+            document.getElementById('distance').textContent = distance;
+            
+            document.getElementById('liveTrackingModal').classList.remove('hidden');
+        }
+        
+        function closeLiveTracking() {
+            document.getElementById('liveTrackingModal').classList.add('hidden');
+        }
+        
+        function callAgent() {
+            const phone = document.getElementById('agentPhone').textContent;
+            if (phone && phone !== '-') {
+                window.location.href = 'tel:' + phone;
+            }
+        }
+        
+        function contactSupport(orderId) {
+            const message = `مرحباً، أريد الاستفسار عن طلب رقم: ${orderId}`;
+            const whatsappUrl = `https://wa.me/201234567890?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '--';
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return '--';
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                return date.toLocaleDateString('ar-EG', options);
+            } catch (e) {
+                return '--';
+            }
+        }
+        
+        function formatDateTime(dateString) {
+            if (!dateString) return '--';
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return '--';
+                const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                return date.toLocaleDateString('ar-EG', options);
+            } catch (e) {
+                return '--';
+            }
+        }
+        
+        async function logout() {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                const result = await API.logout();
+                if (result.success) {
+                    localStorage.clear();
+                    window.location.href = "{{ url_for('index') }}";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الرئيسية - Eco Paper Recycling</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="fixed top-4 right-4 z-50 animate-bounce">
+                    <div class="bg-{% if category == 'success' %}green{% else %}red{% endif %}-100 border border-{% if category == 'success' %}green{% else %}red{% endif %}-400 text-{% if category == 'success' %}green{% else %}red{% endif %}-700 px-6 py-4 rounded-lg shadow-lg flex items-center">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} ml-3 text-xl"></i>
+                        <span class="font-medium">{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="mr-6">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <nav class="bg-green-800 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2 space-x-reverse">
+                <i class="fas fa-recycle text-2xl"></i>
+                <a href="{{ url_for('base') }}" class="text-xl font-bold">Eco Paper Recycling</a>
+            </div>
+            
+            <div class="hidden md:flex items-center space-x-6 space-x-reverse">
+                <a href="{{ url_for('base') }}" class="hover:text-green-300 font-bold">
+                    <i class="fas fa-home ml-2"></i>الرئيسية
+                </a>
+                <a href="{{ url_for('product') }}" class="hover:text-green-300">
+                    <i class="fas fa-box ml-2"></i>المنتجات
+                </a>
+                <a href="{{ url_for('orders_history') }}" class="hover:text-green-300">
+                    <i class="fas fa-clipboard-list ml-2"></i>طلباتي
+                </a>
+                <a href="{{ url_for('profile') }}" class="hover:text-green-300">
+                    <i class="fas fa-user ml-2"></i>حسابي
+                </a>
+                <button id="logoutBtn" class="text-red-300 hover:text-red-400">
+                    <i class="fas fa-sign-out-alt ml-2"></i>تسجيل الخروج
+                </button>
+            </div>
+            
+            <button id="mobileMenuBtn" class="md:hidden text-2xl">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <div id="mobileMenu" class="hidden md:hidden mt-4 space-y-3 pr-4 bg-green-700 p-4 rounded-lg">
+            <a href="{{ url_for('base') }}" class="block hover:text-green-300 font-bold">
+                <i class="fas fa-home ml-2"></i>الرئيسية
+            </a>
+            <a href="{{ url_for('product') }}" class="block hover:text-green-300">
+                <i class="fas fa-box ml-2"></i>المنتجات
+            </a>
+            <a href="{{ url_for('orders_history') }}" class="block hover:text-green-300">
+                <i class="fas fa-clipboard-list ml-2"></i>طلباتي
+            </a>
+            <a href="{{ url_for('profile') }}" class="block hover:text-green-300">
+                <i class="fas fa-user ml-2"></i>حسابي
+            </a>
+            <button id="logoutBtnMobile" class="block text-red-300 hover:text-red-400">
+                <i class="fas fa-sign-out-alt ml-2"></i>تسجيل الخروج
+            </button>
+        </div>
+    </nav>
+
+    <div class="bg-gradient-to-r from-green-600 to-green-800 text-white py-6">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold mb-2">
+                        مرحباً بك، <span id="userName" class="text-green-300">{{ session.get('user_name', 'المستخدم') }}</span>
+                    </h1>
+                    <p class="text-green-100">استمتع بخدمات إعادة تدوير الورق بكل سهولة وأمان</p>
+                </div>
+                
+                <div class="mt-4 md:mt-0">
+                    <a href="{{ url_for('create_order') }}" class="bg-white text-green-800 px-6 py-2 rounded-lg font-bold hover:bg-gray-100 transition duration-300">
+                        <i class="fas fa-plus ml-2"></i>إنشاء طلب جديد
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-white rounded-xl shadow-lg p-6 border-r-4 border-green-500 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">الطلبات النشطة</p>
+                        <p class="text-3xl font-bold text-green-700" id="activeOrders">0</p>
+                    </div>
+                    <div class="text-green-500 text-3xl">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                </div>
+                <a href="{{ url_for('orders_history') }}" class="text-green-600 hover:text-green-800 text-sm mt-4 block">
+                    عرض التفاصيل <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6 border-r-4 border-blue-500 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">المنتجات المتاحة</p>
+                        <p class="text-3xl font-bold text-blue-700" id="availableProducts">0</p>
+                    </div>
+                    <div class="text-blue-500 text-3xl">
+                        <i class="fas fa-box-open"></i>
+                    </div>
+                </div>
+                <a href="{{ url_for('product') }}" class="text-blue-600 hover:text-blue-800 text-sm mt-4 block">
+                    تصفح المنتجات <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6 border-r-4 border-yellow-500 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">إجمالي الطلبات</p>
+                        <p class="text-3xl font-bold text-yellow-700" id="totalOrders">0</p>
+                    </div>
+                    <div class="text-yellow-500 text-3xl">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+                <a href="{{ url_for('orders_history') }}" class="text-yellow-600 hover:text-yellow-800 text-sm mt-4 block">
+                    عرض السجل <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6 border-r-4 border-purple-500 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">خدمة العملاء</p>
+                        <p class="text-lg font-bold text-purple-700">متاحة 24/7</p>
+                    </div>
+                    <div class="text-purple-500 text-3xl">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                </div>
+                <button onclick="openSupport()" class="text-purple-600 hover:text-purple-800 text-sm mt-4">
+                    التواصل مع الدعم <i class="fas fa-arrow-left"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 pb-12">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-green-800">أفضل المنتجات</h2>
+                        <a href="{{ url_for('product') }}" class="text-green-600 hover:text-green-800">
+                            عرض الكل <i class="fas fa-arrow-left mr-2"></i>
+                        </a>
+                    </div>
+                    
+                    <div id="featuredProducts" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Products will be loaded here via JavaScript -->
+                        <div class="text-center py-8 col-span-2">
+                            <div class="loading-spinner mx-auto"></div>
+                            <p class="text-gray-500 mt-2">جاري تحميل المنتجات...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-green-800">طلباتك الأخيرة</h2>
+                        <a href="{{ url_for('orders_history') }}" class="text-green-600 hover:text-green-800">
+                            عرض الكل <i class="fas fa-arrow-left mr-2"></i>
+                        </a>
+                    </div>
+                    
+                    <div id="recentOrders" class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-green-50">
+                                    <th class="text-right py-3 px-4">رقم الطلب</th>
+                                    <th class="text-right py-3 px-4">التاريخ</th>
+                                    <th class="text-right py-3 px-4">الحالة</th>
+                                    <th class="text-right py-3 px-4">الإجمالي</th>
+                                    <th class="text-right py-3 px-4">الإجراءات</th>
+                                  </tr>
+                            </thead>
+                            <tbody id="ordersTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center py-8">
+                                        <div class="loading-spinner mx-auto"></div>
+                                        <p class="text-gray-500 mt-2">جاري تحميل الطلبات...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <div id="noOrdersMessage" class="hidden text-center py-8">
+                            <i class="fas fa-clipboard-list text-4xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-500">لا توجد طلبات سابقة</p>
+                            <a href="{{ url_for('create_order') }}" class="inline-block mt-4 text-green-600 hover:text-green-800">
+                                <i class="fas fa-plus ml-2"></i>إنشاء طلب جديد
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                    <h2 class="text-xl font-bold text-green-800 mb-6">إجراءات سريعة</h2>
+                    
+                    <div class="space-y-4">
+                        <a href="{{ url_for('create_order') }}" class="flex items-center p-3 bg-green-50 hover:bg-green-100 rounded-lg transition duration-300">
+                            <div class="bg-green-100 p-2 rounded-lg ml-3">
+                                <i class="fas fa-plus text-green-600"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium">إنشاء طلب جديد</p>
+                                <p class="text-sm text-gray-500">أضف منتجات للشراء</p>
+                            </div>
+                            <i class="fas fa-arrow-left text-gray-400"></i>
+                        </a>
+                        
+                        <a href="{{ url_for('product') }}" class="flex items-center p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition duration-300">
+                            <div class="bg-blue-100 p-2 rounded-lg ml-3">
+                                <i class="fas fa-box text-blue-600"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium">تصفح المنتجات</p>
+                                <p class="text-sm text-gray-500">استعرض جميع أنواع الورق</p>
+                            </div>
+                            <i class="fas fa-arrow-left text-gray-400"></i>
+                        </a>
+                        
+                        <a href="{{ url_for('orders_history') }}" class="flex items-center p-3 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition duration-300">
+                            <div class="bg-yellow-100 p-2 rounded-lg ml-3">
+                                <i class="fas fa-history text-yellow-600"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium">سجل الطلبات</p>
+                                <p class="text-sm text-gray-500">اطلع على طلباتك السابقة</p>
+                            </div>
+                            <i class="fas fa-arrow-left text-gray-400"></i>
+                        </a>
+                        
+                        <a href="{{ url_for('profile') }}" class="flex items-center p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition duration-300">
+                            <div class="bg-purple-100 p-2 rounded-lg ml-3">
+                                <i class="fas fa-user-cog text-purple-600"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium">إعدادات الحساب</p>
+                                <p class="text-sm text-gray-500">عدّل بياناتك الشخصية</p>
+                            </div>
+                            <i class="fas fa-arrow-left text-gray-400"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="bg-green-50 rounded-xl shadow-lg p-6 mb-8 border border-green-100">
+                    <h2 class="text-xl font-bold text-green-800 mb-6">إحصائياتك</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-3 bg-white rounded-lg">
+                            <span class="text-gray-600">إجمالي المشتريات</span>
+                            <span class="font-bold text-green-700" id="totalPurchase">0 ج.م</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center p-3 bg-white rounded-lg">
+                            <span class="text-gray-600">الورق المعاد تدويره</span>
+                            <span class="font-bold text-green-700" id="totalRecycled">0 كجم</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center p-3 bg-white rounded-lg">
+                            <span class="text-gray-600">الأشجار المحفوظة</span>
+                            <span class="font-bold text-green-700" id="treesSaved">0</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center p-3 bg-white rounded-lg">
+                            <span class="text-gray-600">البصمة الكربونية المخفضة</span>
+                            <span class="font-bold text-green-700" id="carbonSaved">0 كجم</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-green-600 to-green-800 text-white rounded-xl shadow-lg p-6">
+                    <i class="fas fa-leaf text-4xl mb-4 block text-center"></i>
+                    <h3 class="text-xl font-bold mb-3 text-center">ساهم في حماية البيئة</h3>
+                    <p class="text-green-100 text-center mb-6">
+                        كل طلب تقوم به يساهم في تقليل التلوث والحفاظ على الموارد الطبيعية
+                    </p>
+                    <button onclick="shareApp()" class="w-full bg-white text-green-800 py-2 rounded-lg font-bold hover:bg-gray-100 transition duration-300">
+                        <i class="fas fa-share-alt ml-2"></i>شارك التطبيق مع أصدقائك
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0">
+                    <div class="flex items-center space-x-2 space-x-reverse mb-4">
+                        <i class="fas fa-recycle text-2xl text-green-400"></i>
+                        <span class="text-xl font-bold">Eco Paper Recycling</span>
+                    </div>
+                    <p class="text-gray-400">منصتك المفضلة لإعادة تدوير الورق</p>
+                </div>
+                
+                <div class="text-center md:text-right">
+                    <p class="text-gray-400 mb-2">© 2025 جميع الحقوق محفوظة</p>
+                    <div class="flex space-x-4 space-x-reverse justify-center md:justify-end">
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i class="fas fa-phone"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Support Modal -->
+    <div id="supportModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div class="flex justify-between items-center p-6 border-b">
+                <h3 class="text-xl font-bold text-green-800">الدعم الفني</h3>
+                <button onclick="closeSupport()" class="text-2xl text-gray-500 hover:text-gray-700">&times;</button>
+            </div>
+            
+            <div class="p-6">
+                <div class="mb-6">
+                    <p class="text-gray-600 mb-4">يمكنك التواصل معنا عبر:</p>
+                    
+                    <div class="space-y-4">
+                        <a href="tel:01234567890" class="flex items-center p-3 bg-green-50 rounded-lg hover:bg-green-100 transition duration-300">
+                            <div class="bg-green-100 p-3 rounded-full ml-3">
+                                <i class="fas fa-phone text-green-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">الاتصال الهاتفي</p>
+                                <p class="text-sm text-gray-500">01234567890</p>
+                            </div>
+                        </a>
+                        
+                        <a href="https://wa.me/201234567890" target="_blank" class="flex items-center p-3 bg-green-50 rounded-lg hover:bg-green-100 transition duration-300">
+                            <div class="bg-green-100 p-3 rounded-full ml-3">
+                                <i class="fab fa-whatsapp text-green-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">واتساب</p>
+                                <p class="text-sm text-gray-500">01234567890</p>
+                            </div>
+                        </a>
+                        
+                        <div class="p-3 bg-blue-50 rounded-lg">
+                            <p class="font-medium mb-2">البريد الإلكتروني</p>
+                            <p class="text-sm text-gray-500">support@ecopaper.com</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm">خدمة العملاء متاحة 24 ساعة، 7 أيام في الأسبوع</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/action.js') }}"></script>
+    <script>
+        // تنظيف localStorage من المنتجات القديمة عند تحميل الصفحة
+        (function clearOldProductData() {
+            // حذف المنتجات القديمة من localStorage
+            if (localStorage.getItem('products')) {
+                console.log('Clearing old products from localStorage');
+                localStorage.removeItem('products');
+            }
+        })();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in via API
+            API.getUserData().then(response => {
+                if (!response.success) {
+                    window.location.href = "{{ url_for('login') }}";
+                    return;
+                }
+                
+                // Update UI with user data
+                if (response.user) {
+                    document.getElementById('userName').textContent = response.user.name || 'المستخدم';
+                    
+                    // Update localStorage for compatibility
+                    localStorage.setItem('userData', JSON.stringify(response.user));
+                }
+            }).catch(error => {
+                console.error('Error checking auth:', error);
+                window.location.href = "{{ url_for('login') }}";
+            });
+            
+            // Logout buttons
+            const logoutBtn = document.getElementById('logoutBtn');
+            const logoutBtnMobile = document.getElementById('logoutBtnMobile');
+            
+            if (logoutBtn) logoutBtn.addEventListener('click', logout);
+            if (logoutBtnMobile) logoutBtnMobile.addEventListener('click', logout);
+            
+            // Mobile menu
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            if (mobileMenuBtn) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    const menu = document.getElementById('mobileMenu');
+                    if (menu) {
+                        menu.classList.toggle('hidden');
+                    }
+                });
+            }
+            
+            // Load data
+            loadUserData();
+            loadFeaturedProducts();
+            loadRecentOrders();
+        });
+        
+        function loadUserData() {
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            
+            // Get orders from localStorage
+            let orders = [];
+            try {
+                orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+            } catch (e) {
+                orders = [];
+            }
+            
+            const totalOrders = orders.length;
+            const activeOrders = orders.filter(order => 
+                order.status !== 'مكتمل' && order.status !== 'ملغي'
+            ).length;
+            
+            const totalPurchase = orders.reduce((sum, order) => {
+                return sum + (order.total || 0);
+            }, 0);
+            
+            // Environmental impact calculations
+            const totalRecycled = orders.reduce((sum, order) => sum + (order.quantity || 0), 0);
+            const treesSaved = Math.floor(totalRecycled / 100);
+            const carbonSaved = Math.floor(totalRecycled * 0.8);
+            
+            // Update UI
+            document.getElementById('totalOrders').textContent = totalOrders;
+            document.getElementById('activeOrders').textContent = activeOrders;
+            document.getElementById('totalPurchase').textContent = totalPurchase.toFixed(2) + ' ج.م';
+            document.getElementById('totalRecycled').textContent = totalRecycled + ' كجم';
+            document.getElementById('treesSaved').textContent = treesSaved;
+            document.getElementById('carbonSaved').textContent = carbonSaved + ' كجم';
+        }
+        
+        async function loadFeaturedProducts() {
+            try {
+                console.log('Fetching products from API...');
+                // جلب المنتجات من API
+                const response = await fetch('/api/products');
+                const result = await response.json();
+                
+                let products = [];
+                if (result.success && result.products) {
+                    products = result.products;
+                    console.log('Products loaded from API:', products.length);
+                } else {
+                    products = [];
+                    console.log('No products from API');
+                }
+                
+                const featuredContainer = document.getElementById('featuredProducts');
+                
+                // Update available products count
+                document.getElementById('availableProducts').textContent = products.length;
+                
+                if (!products || products.length === 0) {
+                    featuredContainer.innerHTML = `
+                        <div class="text-center py-8 col-span-2">
+                            <i class="fas fa-box-open text-4xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-500">لا توجد منتجات متاحة حالياً</p>
+                            <p class="text-sm text-gray-400 mt-2">سيتم إضافة منتجات قريباً</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Get first 4 products
+                const featuredProducts = products.slice(0, 4);
+                
+                let productsHTML = '';
+                featuredProducts.forEach(product => {
+                    const imageUrl = product.image && product.image !== '' ? product.image : 'https://via.placeholder.com/400?text=منتج';
+                    productsHTML += `
+                        <div class="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 card-hover">
+                            <div class="h-48 overflow-hidden">
+                                <img src="${imageUrl}" alt="${product.name}" 
+                                     class="w-full h-full object-cover transition duration-500 hover:scale-110"
+                                     onerror="this.src='https://via.placeholder.com/400?text=منتج'">
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-bold text-lg text-green-800 mb-2">${product.name}</h3>
+                                <p class="text-gray-600 text-sm mb-3">${(product.description || 'منتج لإعادة التدوير').substring(0, 80)}${product.description && product.description.length > 80 ? '...' : ''}</p>
+                                <div class="flex justify-between items-center">
+                                    <span class="font-bold text-green-700">${product.price} ج.م / ${product.unit || 'كجم'}</span>
+                                    <a href="{{ url_for('create_order') }}" 
+                                       class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition duration-300">
+                                        اطلب الآن
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                featuredContainer.innerHTML = productsHTML;
+                
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('featuredProducts').innerHTML = `
+                    <div class="text-center py-8 col-span-2">
+                        <i class="fas fa-exclamation-triangle text-4xl text-red-400 mb-4"></i>
+                        <p class="text-gray-500">حدث خطأ في تحميل المنتجات</p>
+                        <p class="text-sm text-gray-400 mt-2">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function loadRecentOrders() {
+            let orders = [];
+            try {
+                orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+            } catch (e) {
+                orders = [];
+            }
+            
+            const tbody = document.getElementById('ordersTableBody');
+            const noOrdersMessage = document.getElementById('noOrdersMessage');
+            
+            if (!tbody || !noOrdersMessage) return;
+            
+            // Sort by date (newest first)
+            const sortedOrders = orders.sort((a, b) => {
+                return new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date);
+            });
+            
+            const recentOrders = sortedOrders.slice(0, 5);
+            
+            if (recentOrders.length === 0) {
+                tbody.classList.add('hidden');
+                noOrdersMessage.classList.remove('hidden');
+                return;
+            }
+            
+            tbody.classList.remove('hidden');
+            noOrdersMessage.classList.add('hidden');
+            
+            let ordersHTML = '';
+            
+            recentOrders.forEach(order => {
+                let statusClass = 'bg-gray-100 text-gray-800';
+                if (order.status === 'مكتمل') {
+                    statusClass = 'bg-green-100 text-green-800';
+                } else if (order.status === 'في الطريق') {
+                    statusClass = 'bg-blue-100 text-blue-800';
+                } else if (order.status === 'قيد المراجعة') {
+                    statusClass = 'bg-yellow-100 text-yellow-800';
+                } else if (order.status === 'ملغي') {
+                    statusClass = 'bg-red-100 text-red-800';
+                } else if (order.status === 'تم الاستلام') {
+                    statusClass = 'bg-green-50 text-green-700';
+                }
+                
+                ordersHTML += `
+                    <tr class="border-b hover:bg-gray-50 transition duration-200">
+                        <td class="py-3 px-4 font-bold">#${order.id}</td>
+                        <td class="py-3 px-4">${formatDate(order.createdAt || order.date)}</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-1 rounded-full text-xs font-bold ${statusClass}">
+                                ${order.status || 'قيد المراجعة'}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 font-bold">${order.total ? order.total.toFixed(2) + ' ج.م' : '--'}</td>
+                        <td class="py-3 px-4">
+                            <a href="{{ url_for('order_tracking') }}?order=${order.id}" 
+                               class="text-green-600 hover:text-green-800 text-sm transition duration-200">
+                                <i class="fas fa-eye ml-1"></i>عرض
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = ordersHTML;
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '--';
+            
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return '--';
+                
+                const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                return date.toLocaleDateString('ar-EG', options);
+            } catch (e) {
+                return '--';
+            }
+        }
+        
+        function openSupport() {
+            const modal = document.getElementById('supportModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+        }
+        
+        function closeSupport() {
+            const modal = document.getElementById('supportModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+        
+        function shareApp() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Eco Paper Recycling',
+                    text: 'انضم إلى منصة إعادة تدوير الورق الرائدة',
+                    url: window.location.origin
+                }).catch(() => {});
+            } else {
+                alert('يمكنك مشاركة الرابط: ' + window.location.origin);
+            }
+        }
+        
+        async function logout() {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                try {
+                    const result = await API.logout();
+                    if (result.success) {
+                        // Clear all localStorage
+                        localStorage.removeItem('isLoggedIn');
+                        localStorage.removeItem('userData');
+                        localStorage.removeItem('users');
+                        localStorage.removeItem('cart');
+                        localStorage.removeItem('tempOrder');
+                        localStorage.removeItem('products');
+                        
+                        // Redirect to index
+                        window.location.href = "{{ url_for('index') }}";
+                    } else {
+                        showMessage('حدث خطأ أثناء تسجيل الخروج', 'error');
+                    }
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    showMessage('حدث خطأ أثناء تسجيل الخروج', 'error');
+                }
+            }
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('supportModal');
+            if (e.target === modal) {
+                closeSupport();
+            }
+        });
+    </script>
+</body>
+</html>

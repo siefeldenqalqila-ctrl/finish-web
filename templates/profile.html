@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الملف الشخصي - Eco Paper Recycling</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-green-800 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2 space-x-reverse">
+                <i class="fas fa-recycle text-2xl"></i>
+                <a href="{{ url_for('base') }}" class="text-xl font-bold">Eco Paper Recycling</a>
+            </div>
+            
+            <div class="hidden md:flex items-center space-x-6 space-x-reverse">
+                <a href="{{ url_for('base') }}" class="hover:text-green-300">
+                    <i class="fas fa-home ml-2"></i>الرئيسية
+                </a>
+                <a href="{{ url_for('orders_history') }}" class="hover:text-green-300">
+                    <i class="fas fa-clipboard-list ml-2"></i>طلباتي
+                </a>
+                <a href="{{ url_for('profile') }}" class="hover:text-green-300 font-bold">
+                    <i class="fas fa-user ml-2"></i>حسابي
+                </a>
+                <button id="logoutBtn" class="text-red-300 hover:text-red-400">
+                    <i class="fas fa-sign-out-alt ml-2"></i>تسجيل الخروج
+                </button>
+            </div>
+            
+            <button id="mobileMenuBtn" class="md:hidden text-2xl">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <div id="mobileMenu" class="hidden md:hidden mt-4 space-y-3 pr-4 bg-green-700 p-4 rounded-lg">
+            <a href="{{ url_for('base') }}" class="block hover:text-green-300">الرئيسية</a>
+            <a href="{{ url_for('orders_history') }}" class="block hover:text-green-300">طلباتي</a>
+            <a href="{{ url_for('profile') }}" class="block hover:text-green-300 font-bold">حسابي</a>
+            <button id="logoutBtnMobile" class="block text-red-300 hover:text-red-400">تسجيل الخروج</button>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="fixed top-4 right-4 z-50">
+                    <div class="bg-{% if category == 'success' %}green{% else %}red{% endif %}-100 border border-{% if category == 'success' %}green{% else %}red{% endif %}-400 text-{% if category == 'success' %}green{% else %}red{% endif %}-700 px-6 py-4 rounded-lg shadow-lg flex items-center">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} ml-3 text-xl"></i>
+                        <span class="font-medium">{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="mr-6">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-green-800 mb-2">الملف الشخصي</h1>
+                <p class="text-gray-600">إدارة حسابك وتحديث معلوماتك الشخصية</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-bold text-green-800">معلومات الحساب</h2>
+                            <button onclick="editProfile()" 
+                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300">
+                                <i class="fas fa-edit ml-2"></i>
+                                تعديل
+                            </button>
+                        </div>
+                        
+                        <div id="profileInfo" class="space-y-4">
+                            <div class="text-center py-8">
+                                <div class="loading-spinner mx-auto"></div>
+                                <p class="text-gray-500 mt-2">جاري تحميل المعلومات...</p>
+                            </div>
+                        </div>
+                        
+                        <form id="profileForm" class="space-y-4 hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="editName" class="block text-sm font-medium text-gray-700 mb-2">
+                                        الاسم بالكامل *
+                                    </label>
+                                    <input type="text" id="editName" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                </div>
+                                
+                                <div>
+                                    <label for="editEmail" class="block text-sm font-medium text-gray-700 mb-2">
+                                        البريد الإلكتروني *
+                                    </label>
+                                    <input type="email" id="editEmail" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                </div>
+                                
+                                <div>
+                                    <label for="editPhone" class="block text-sm font-medium text-gray-700 mb-2">
+                                        رقم الهاتف *
+                                    </label>
+                                    <input type="tel" id="editPhone" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                </div>
+                                
+                                <div>
+                                    <label for="editGovernorate" class="block text-sm font-medium text-gray-700 mb-2">
+                                        المحافظة *
+                                    </label>
+                                    <select id="editGovernorate" 
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                        <option value="">اختر المحافظة</option>
+                                        <option value="القاهرة">القاهرة</option>
+                                        <option value="الجيزة">الجيزة</option>
+                                        <option value="الإسكندرية">الإسكندرية</option>
+                                        <option value="الدقهلية">الدقهلية</option>
+                                        <option value="الشرقية">الشرقية</option>
+                                        <option value="الغربية">الغربية</option>
+                                        <option value="المنوفية">المنوفية</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="editAddress" class="block text-sm font-medium text-gray-700 mb-2">
+                                    العنوان التفصيلي *
+                                </label>
+                                <textarea id="editAddress" rows="3"
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
+                            </div>
+                            
+                            <div class="flex space-x-4 space-x-reverse pt-4">
+                                <button type="button" onclick="cancelEdit()" 
+                                        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-50 transition duration-300">
+                                    إلغاء
+                                </button>
+                                <button type="submit" 
+                                        class="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition duration-300">
+                                    حفظ التغييرات
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-xl font-bold text-green-800 mb-6">تغيير كلمة المرور</h2>
+                        
+                        <form id="changePasswordForm" class="space-y-4">
+                            <div>
+                                <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                                    كلمة المرور الحالية *
+                                </label>
+                                <div class="relative">
+                                    <input type="password" id="currentPassword" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                           required>
+                                    <button type="button" onclick="togglePasswordVisibility('currentPassword')" 
+                                            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                                    كلمة المرور الجديدة *
+                                </label>
+                                <div class="relative">
+                                    <input type="password" id="newPassword" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                           required>
+                                    <button type="button" onclick="togglePasswordVisibility('newPassword')" 
+                                            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="confirmNewPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                                    تأكيد كلمة المرور الجديدة *
+                                </label>
+                                <div class="relative">
+                                    <input type="password" id="confirmNewPassword" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                           required>
+                                    <button type="button" onclick="togglePasswordVisibility('confirmNewPassword')" 
+                                            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-4">
+                                <button type="submit" 
+                                        class="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition duration-300">
+                                    <i class="fas fa-key ml-2"></i>
+                                    تغيير كلمة المرور
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                        <div class="text-center mb-6">
+                            <div class="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-4xl mx-auto mb-4">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <h3 id="userNameDisplay" class="text-xl font-bold text-green-800 mb-2">جاري التحميل...</h3>
+                            <p id="userTypeDisplay" class="text-gray-600">-</p>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="text-gray-600">تاريخ الانضمام</span>
+                                <span id="joinDate" class="font-bold">-</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="text-gray-600">عدد الطلبات</span>
+                                <span id="ordersCount" class="font-bold">0</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="text-gray-600">مستوى الثقة</span>
+                                <span class="font-bold text-green-600">ممتاز</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-50 rounded-xl shadow-lg p-6 mb-6">
+                        <h3 class="text-xl font-bold text-green-800 mb-4">إجراءات سريعة</h3>
+                        
+                        <div class="space-y-3">
+                            <a href="{{ url_for('orders_history') }}" 
+                               class="flex items-center p-3 bg-white rounded-lg hover:bg-green-100 transition duration-300">
+                                <div class="bg-green-100 p-2 rounded-lg ml-3">
+                                    <i class="fas fa-history text-green-600"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-medium">سجل الطلبات</p>
+                                    <p class="text-sm text-gray-500">عرض جميع طلباتك</p>
+                                </div>
+                                <i class="fas fa-arrow-left text-gray-400"></i>
+                            </a>
+                            
+                            <a href="{{ url_for('create_order') }}" 
+                               class="flex items-center p-3 bg-white rounded-lg hover:bg-green-100 transition duration-300">
+                                <div class="bg-green-100 p-2 rounded-lg ml-3">
+                                    <i class="fas fa-plus text-green-600"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-medium">طلب جديد</p>
+                                    <p class="text-sm text-gray-500">إنشاء طلب إعادة تدوير</p>
+                                </div>
+                                <i class="fas fa-arrow-left text-gray-400"></i>
+                            </a>
+                            
+                            <button onclick="logout()" 
+                                    class="w-full flex items-center p-3 bg-red-50 rounded-lg hover:bg-red-100 transition duration-300 text-red-700">
+                                <div class="bg-red-100 p-2 rounded-lg ml-3">
+                                    <i class="fas fa-sign-out-alt text-red-600"></i>
+                                </div>
+                                <div class="flex-1 text-right">
+                                    <p class="font-medium">تسجيل الخروج</p>
+                                    <p class="text-sm text-red-500">خروج من حسابك</p>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-green-600 to-green-800 text-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-xl font-bold mb-4">مساهماتك البيئية</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-full bg-green-800 flex items-center justify-center ml-4">
+                                    <i class="fas fa-leaf"></i>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold" id="treesSavedCount">0</p>
+                                    <p class="text-sm text-green-200">شجرة تم الحفاظ عليها</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-full bg-green-800 flex items-center justify-center ml-4">
+                                    <i class="fas fa-recycle"></i>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold" id="paperRecycled">0</p>
+                                    <p class="text-sm text-green-200">كجم ورق معاد تدويره</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-full bg-green-800 flex items-center justify-center ml-4">
+                                    <i class="fas fa-tint"></i>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold" id="waterSaved">0</p>
+                                    <p class="text-sm text-green-200">لتر مياه محفوظة</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/action.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/order.js') }}"></script>
+    <script>
+        let userData = {};
+        let isEditing = false;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            API.getUserData().then(response => {
+                if (!response.success) {
+                    window.location.href = "{{ url_for('login') }}";
+                    return;
+                }
+                
+                userData = response.user;
+                loadUserData();
+                loadUserStats();
+            }).catch(error => {
+                console.error('Error loading user data:', error);
+                window.location.href = "{{ url_for('login') }}";
+            });
+            
+            document.getElementById('profileForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveProfileChanges();
+            });
+            
+            document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                changePassword();
+            });
+
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('logoutBtnMobile').addEventListener('click', logout);
+            
+            document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+                const menu = document.getElementById('mobileMenu');
+                menu.classList.toggle('hidden');
+            });
+        });
+        
+        function loadUserData() {
+            const profileInfo = document.getElementById('profileInfo');
+            
+            if (userData) {
+                document.getElementById('userNameDisplay').textContent = userData.name || 'مستخدم';
+                document.getElementById('userTypeDisplay').textContent = 
+                    userData.type === 'company' ? 'حساب شركة' : 'حساب فردي';
+                
+                if (userData.created_at) {
+                    document.getElementById('joinDate').textContent = formatDate(userData.created_at);
+                }
+                
+                profileInfo.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-500">الاسم بالكامل</p>
+                            <p class="font-bold">${userData.name || 'غير محدد'}</p>
+                        </div>
+                        
+                        <div>
+                            <p class="text-sm text-gray-500">البريد الإلكتروني</p>
+                            <p class="font-bold">${userData.email || 'غير محدد'}</p>
+                        </div>
+                        
+                        <div>
+                            <p class="text-sm text-gray-500">رقم الهاتف</p>
+                            <p class="font-bold">${userData.phone || 'غير محدد'}</p>
+                        </div>
+                        
+                        <div>
+                            <p class="text-sm text-gray-500">نوع الحساب</p>
+                            <p class="font-bold">${userData.type === 'company' ? 'شركة' : 'فرد'}</p>
+                        </div>
+                        
+                        <div>
+                            <p class="text-sm text-gray-500">المحافظة</p>
+                            <p class="font-bold">${userData.governorate || 'غير محدد'}</p>
+                        </div>
+                        
+                        <div class="md:col-span-2">
+                            <p class="text-sm text-gray-500">العنوان</p>
+                            <p class="font-bold">${userData.address || 'غير محدد'}</p>
+                        </div>
+                        
+                        ${userData.type === 'company' && userData.company_name ? `
+                            <div class="md:col-span-2">
+                                <p class="text-sm text-gray-500">اسم الشركة</p>
+                                <p class="font-bold">${userData.company_name}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                document.getElementById('editName').value = userData.name || '';
+                document.getElementById('editEmail').value = userData.email || '';
+                document.getElementById('editPhone').value = userData.phone || '';
+                document.getElementById('editGovernorate').value = userData.governorate || '';
+                document.getElementById('editAddress').value = userData.address || '';
+            }
+        }
+        
+        function loadUserStats() {
+            fetch('/api/orders')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const orders = data.orders;
+                        document.getElementById('ordersCount').textContent = orders.length;
+                        
+                        const paperRecycled = orders.reduce((sum, order) => sum + (order.quantity || 0), 0);
+                        const treesSaved = Math.floor(paperRecycled / 100);
+                        const waterSaved = paperRecycled * 100;
+                        
+                        document.getElementById('paperRecycled').textContent = paperRecycled || 0;
+                        document.getElementById('treesSavedCount').textContent = treesSaved || 0;
+                        document.getElementById('waterSaved').textContent = (waterSaved || 0).toLocaleString();
+                    }
+                })
+                .catch(error => console.error('Error loading orders:', error));
+        }
+        
+        function editProfile() {
+            isEditing = true;
+            document.getElementById('profileInfo').classList.add('hidden');
+            document.getElementById('profileForm').classList.remove('hidden');
+        }
+        
+        function cancelEdit() {
+            isEditing = false;
+            document.getElementById('profileInfo').classList.remove('hidden');
+            document.getElementById('profileForm').classList.add('hidden');
+        }
+        
+        function saveProfileChanges() {
+            const updatedData = {
+                name: document.getElementById('editName').value,
+                email: document.getElementById('editEmail').value,
+                phone: document.getElementById('editPhone').value,
+                governorate: document.getElementById('editGovernorate').value,
+                address: document.getElementById('editAddress').value
+            };
+            
+            if (!updatedData.name || !updatedData.email || !updatedData.phone || 
+                !updatedData.governorate || !updatedData.address) {
+                showMessage('يرجى ملء جميع الحقول المطلوبة', 'error');
+                return;
+            }
+            
+            if (!validateEmail(updatedData.email)) {
+                showMessage('البريد الإلكتروني غير صالح', 'error');
+                return;
+            }
+            
+            if (!validatePhone(updatedData.phone)) {
+                showMessage('رقم الهاتف غير صالح', 'error');
+                return;
+            }
+            
+            // تحديث البيانات عبر API
+            fetch('/api/update-profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: userData.id,
+                    ...updatedData
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('تم تحديث البيانات بنجاح', 'success');
+                    
+                    userData = { ...userData, ...updatedData };
+                    
+                    document.getElementById('userNameDisplay').textContent = userData.name;
+                    loadUserData();
+                    cancelEdit();
+                } else {
+                    showMessage(data.message || 'حدث خطأ أثناء تحديث البيانات', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating profile:', error);
+                showMessage('حدث خطأ في الاتصال بالخادم', 'error');
+            });
+        }
+        
+        async function changePassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmNewPassword').value;
+            
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showMessage('يرجى ملء جميع الحقول', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showMessage('كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showMessage('كلمتا المرور غير متطابقتين', 'error');
+                return;
+            }
+            
+            try {
+                // التحقق من كلمة المرور الحالية عبر API
+                const loginCheck = await API.login(userData.email, currentPassword);
+                
+                if (!loginCheck.success) {
+                    showMessage('كلمة المرور الحالية غير صحيحة', 'error');
+                    return;
+                }
+                
+                // تحديث كلمة المرور في قاعدة البيانات
+                const response = await fetch('/api/update-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: userData.id,
+                        newPassword: newPassword
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmNewPassword').value = '';
+                    
+                    showMessage('تم تغيير كلمة المرور بنجاح', 'success');
+                } else {
+                    showMessage(result.message || 'حدث خطأ أثناء تغيير كلمة المرور', 'error');
+                }
+            } catch (error) {
+                console.error('Error changing password:', error);
+                showMessage('حدث خطأ في الاتصال بالخادم', 'error');
+            }
+        }
+        
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.nextElementSibling.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '--';
+            try {
+                const date = new Date(dateString);
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                return date.toLocaleDateString('ar-EG', options);
+            } catch (e) {
+                return '--';
+            }
+        }
+        
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+        
+        function validatePhone(phone) {
+            const re = /^01[0125][0-9]{8}$/;
+            return re.test(phone);
+        }
+        
+        async function logout() {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                const result = await API.logout();
+                if (result.success) {
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('userData');
+                    localStorage.removeItem('users');
+                    window.location.href = "{{ url_for('index') }}";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

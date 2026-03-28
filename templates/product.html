@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المنتجات - Eco Paper Recycling</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .product-card {
+            transition: all 0.3s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,100,0,0.1);
+        }
+        .quantity-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #d1d5db;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quantity-btn:hover {
+            background-color: #f3f4f6;
+        }
+        .quantity-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .unavailable-product {
+            opacity: 0.7;
+            filter: grayscale(0.5);
+        }
+        .company-badge {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- التحقق من نوع المستخدم -->
+    <script>
+        // التحقق من نوع المستخدم من الجلسة
+        const userRole = "{{ session.get('user_role', 'customer') }}";
+        const userType = "{{ session.get('user_type', 'individual') }}";
+        const isAdmin = userRole === "admin";
+        const isCompany = userRole === "company";
+        const isCustomer = userRole === "customer";
+        
+        console.log("User Role:", userRole);
+        console.log("User Type:", userType);
+        console.log("Is Admin:", isAdmin);
+        console.log("Is Company:", isCompany);
+    </script>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="fixed top-4 right-4 z-50 animate-bounce">
+                    <div class="bg-{% if category == 'success' %}green{% else %}red{% endif %}-100 border border-{% if category == 'success' %}green{% else %}red{% endif %}-400 text-{% if category == 'success' %}green{% else %}red{% endif %}-700 px-6 py-4 rounded-lg shadow-lg flex items-center">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} ml-3 text-xl"></i>
+                        <span class="font-medium">{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="mr-6">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <nav class="bg-green-800 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2 space-x-reverse">
+                <i class="fas fa-recycle text-2xl"></i>
+                <a href="{{ url_for('base') }}" class="text-xl font-bold">Eco Paper Recycling</a>
+            </div>
+            
+            <div class="hidden md:flex items-center space-x-6 space-x-reverse">
+                <a href="{{ url_for('base') }}" class="hover:text-green-300">
+                    <i class="fas fa-home ml-2"></i>الرئيسية
+                </a>
+                <a href="{{ url_for('product') }}" class="hover:text-green-300 font-bold">
+                    <i class="fas fa-box ml-2"></i>المنتجات
+                </a>
+                <a href="{{ url_for('orders_history') }}" class="hover:text-green-300">
+                    <i class="fas fa-clipboard-list ml-2"></i>طلباتي
+                </a>
+                <a href="{{ url_for('profile') }}" class="hover:text-green-300">
+                    <i class="fas fa-user ml-2"></i>حسابي
+                </a>
+                
+                {% if isAdmin %}
+                <a href="{{ url_for('admin_products') }}" class="hover:text-green-300 text-yellow-300">
+                    <i class="fas fa-cog ml-2"></i>إدارة المنتجات
+                </a>
+                {% endif %}
+                
+                {% if isCompany %}
+                <a href="{{ url_for('company_products') }}" class="hover:text-green-300 text-blue-300">
+                    <i class="fas fa-building ml-2"></i>منتجات شركتي
+                </a>
+                {% endif %}
+                
+                <button id="logoutBtn" class="text-red-300 hover:text-red-400">
+                    <i class="fas fa-sign-out-alt ml-2"></i>تسجيل الخروج
+                </button>
+            </div>
+            
+            <button id="mobileMenuBtn" class="md:hidden text-2xl">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <div id="mobileMenu" class="hidden md:hidden mt-4 space-y-3 pr-4 bg-green-700 p-4 rounded-lg">
+            <a href="{{ url_for('base') }}" class="block hover:text-green-300">الرئيسية</a>
+            <a href="{{ url_for('product') }}" class="block hover:text-green-300 font-bold">المنتجات</a>
+            <a href="{{ url_for('orders_history') }}" class="block hover:text-green-300">طلباتي</a>
+            <a href="{{ url_for('profile') }}" class="block hover:text-green-300">حسابي</a>
+            
+            {% if isAdmin %}
+            <a href="{{ url_for('admin_products') }}" class="block hover:text-green-300 text-yellow-300">إدارة المنتجات</a>
+            {% endif %}
+            
+            {% if isCompany %}
+            <a href="{{ url_for('company_products') }}" class="block hover:text-green-300 text-blue-300">منتجات شركتي</a>
+            {% endif %}
+            
+            <button id="logoutBtnMobile" class="block text-red-300 hover:text-red-400">تسجيل الخروج</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="bg-gradient-to-r from-green-600 to-green-800 text-white py-12">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-4xl font-bold mb-4">منتجات إعادة التدوير</h1>
+            <p class="text-xl text-green-100 max-w-2xl mx-auto">
+                تصفح المنتجات المتاحة من شركات إعادة التدوير المختلفة واختر ما يناسبك
+            </p>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Cart Summary (Mobile) -->
+        <div id="cartSummary" class="lg:hidden fixed bottom-4 right-4 left-4 bg-white rounded-xl shadow-2xl p-4 z-40 hidden">
+            <div class="flex justify-between items-center">
+                <div>
+                    <span class="font-bold text-green-800">سلة الطلبات</span>
+                    <span id="cartTotalItems" class="text-sm text-gray-600 mr-2">0 منتج</span>
+                </div>
+                <a href="{{ url_for('create_order') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700">
+                    عرض السلة
+                </a>
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="md:col-span-2">
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="ابحث عن منتج..." 
+                               class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                </div>
+                <div>
+                    <select id="categoryFilter" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <option value="all">جميع الفئات</option>
+                        <option value="كرتون">كرتون</option>
+                        <option value="ورق مكتبي">ورق مكتبي</option>
+                        <option value="جرائد">جرائد</option>
+                        <option value="ورق أبيض">ورق أبيض</option>
+                      
+                    
+                    </select>
+                </div>
+                <div>
+                    <select id="companyFilter" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <option value="all">جميع الشركات</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div id="productsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Products will be loaded here -->
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="text-center py-12 hidden">
+            <div class="loading-spinner mx-auto"></div>
+            <p class="text-gray-500 mt-4">جاري تحميل المنتجات...</p>
+        </div>
+
+        <!-- No Products Message -->
+        <div id="noProductsMessage" class="hidden text-center py-12">
+            <i class="fas fa-box-open text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-600 mb-2">لا توجد منتجات</h3>
+            <p class="text-gray-500">سيتم إضافة منتجات قريباً</p>
+        </div>
+    </div>
+
+    <!-- Quick View Modal -->
+    <div id="quickViewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="relative">
+                <button onclick="closeQuickView()" class="absolute left-4 top-4 text-2xl text-gray-500 hover:text-gray-700 z-10">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div id="quickViewContent" class="p-6">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/action.js') }}"></script>
+    <script>
+        let products = [];
+        let companies = [];
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+        // تنظيف localStorage من المنتجات القديمة
+        (function clearOldProductData() {
+            if (localStorage.getItem('products')) {
+                console.log('Clearing old products from localStorage');
+                localStorage.removeItem('products');
+            }
+        })();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProducts();
+            updateCartSummary();
+            
+            // Logout buttons
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('logoutBtnMobile').addEventListener('click', logout);
+            
+            // Mobile menu
+            document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+                const menu = document.getElementById('mobileMenu');
+                if (menu) menu.classList.toggle('hidden');
+            });
+
+            // Search and filter
+            document.getElementById('searchInput').addEventListener('input', filterProducts);
+            document.getElementById('categoryFilter').addEventListener('change', filterProducts);
+            document.getElementById('companyFilter').addEventListener('change', filterProducts);
+        });
+
+        async function loadProducts() {
+            showLoading(true);
+            
+            try {
+                console.log('Fetching products from API...');
+                const response = await fetch('/api/products');
+                const result = await response.json();
+                
+                if (result.success && result.products) {
+                    products = result.products;
+                    console.log('Products loaded from API:', products.length);
+                } else {
+                    products = [];
+                    console.log('No products from API');
+                }
+                
+                // استخراج قائمة الشركات الفريدة
+                extractCompanies();
+                
+            } catch (e) {
+                console.error('Error loading products:', e);
+                products = [];
+            }
+            
+            displayProducts();
+            showLoading(false);
+        }
+        
+        function extractCompanies() {
+            const companyMap = new Map();
+            products.forEach(product => {
+                if (product.company_id && product.company_name && !companyMap.has(product.company_id)) {
+                    companyMap.set(product.company_id, product.company_name);
+                }
+            });
+            
+            companies = Array.from(companyMap, ([id, name]) => ({ id, name }));
+            
+            // تحديث قائمة الشركات في الفلتر
+            const companyFilter = document.getElementById('companyFilter');
+            let options = '<option value="all">جميع الشركات</option>';
+            companies.forEach(company => {
+                options += `<option value="${company.id}">${company.name}</option>`;
+            });
+            companyFilter.innerHTML = options;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingSpinner').classList.toggle('hidden', !show);
+            document.getElementById('productsGrid').classList.toggle('hidden', show);
+        }
+
+        function getFilteredProducts() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('categoryFilter').value;
+            const companyId = document.getElementById('companyFilter').value;
+            
+            return products.filter(p => {
+                const matchesSearch = p.name.toLowerCase().includes(searchTerm) ||
+                                     (p.description && p.description.toLowerCase().includes(searchTerm));
+                const matchesCategory = category === 'all' || p.category === category;
+                const matchesCompany = companyId === 'all' || p.company_id == companyId;
+                const isAvailable = p.available !== false;
+                
+                return matchesSearch && matchesCategory && matchesCompany && isAvailable;
+            });
+        }
+
+        function filterProducts() {
+            displayProducts();
+        }
+
+        function displayProducts() {
+            const grid = document.getElementById('productsGrid');
+            const filtered = getFilteredProducts();
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fas fa-box-open text-6xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500 text-lg">لا توجد منتجات تطابق بحثك</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            filtered.forEach(product => {
+                const isAvailable = product.available !== false;
+                const cardClass = isAvailable ? 'product-card' : 'product-card unavailable-product';
+                const minQty = product.min_quantity || product.minQuantity || 1;
+                
+                // معالجة المميزات
+                let features = [];
+                if (product.features) {
+                    if (typeof product.features === 'string') {
+                        try {
+                            features = JSON.parse(product.features);
+                        } catch(e) {
+                            features = [product.features];
+                        }
+                    } else if (Array.isArray(product.features)) {
+                        features = product.features;
+                    }
+                }
+                
+                const imageUrl = product.image && product.image !== '' ? product.image : 'https://via.placeholder.com/400?text=منتج';
+                
+                html += `
+                    <div class="${cardClass} bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+                        <div class="h-48 overflow-hidden relative">
+                            <img src="${imageUrl}" 
+                                 alt="${product.name}" 
+                                 class="w-full h-full object-cover transition duration-500 hover:scale-110"
+                                 onerror="this.src='https://via.placeholder.com/400?text=منتج'">
+                            ${!isAvailable ? `
+                                <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                    <span class="bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold">غير متاح</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="p-5">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-lg text-green-800">${product.name}</h3>
+                                <span class="text-sm bg-gray-100 px-2 py-1 rounded">${product.category || 'عام'}</span>
+                            </div>
+                            
+                            <p class="text-gray-600 text-sm mb-3 line-clamp-2">${product.description || 'لا يوجد وصف'}</p>
+                            
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xl font-bold text-green-700">${product.price} ج.م / ${product.unit || 'كجم'}</span>
+                                <span class="text-sm text-gray-500">الحد الأدنى: ${minQty} ${product.unit || 'كجم'}</span>
+                            </div>
+                            
+                            <!-- اسم الشركة -->
+                            ${product.company_name ? `
+                                <div class="mb-3">
+                                    <span class="company-badge">
+                                        <i class="fas fa-building ml-1 text-xs"></i>
+                                        ${product.company_name}
+                                    </span>
+                                </div>
+                            ` : ''}
+                            
+                            ${features && features.length > 0 ? `
+                                <div class="mb-4">
+                                    <p class="text-sm font-bold text-gray-700 mb-2">المميزات:</p>
+                                    <ul class="space-y-1">
+                                        ${features.slice(0, 2).map(f => `
+                                            <li class="text-sm text-gray-600 flex items-center">
+                                                <i class="fas fa-check-circle text-green-500 ml-2 text-xs"></i>
+                                                ${f}
+                                            </li>
+                                        `).join('')}
+                                        ${features.length > 2 ? `
+                                            <li class="text-sm text-green-600">
+                                                <button onclick="showQuickView(${product.id})" class="hover:underline">
+                                                    + ${features.length - 2} مميزات أخرى
+                                                </button>
+                                            </li>
+                                        ` : ''}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            
+                            ${isAvailable ? `
+                                <div class="flex items-center justify-between mb-4">
+                                    <span class="text-gray-700">الكمية:</span>
+                                    <div class="flex items-center">
+                                        <button class="quantity-btn decrease-btn rounded-r-lg border-l-0" 
+                                                onclick="decreaseQuantity(${product.id})">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <input type="number" id="qty-${product.id}" 
+                                               class="w-16 h-10 text-center border-y border-gray-300" 
+                                               value="0" min="0" readonly>
+                                        <button class="quantity-btn increase-btn rounded-l-lg border-r-0" 
+                                                onclick="increaseQuantity(${product.id})">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <button onclick="addToCart(${product.id})" 
+                                        class="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition transform hover:scale-105">
+                                    <i class="fas fa-cart-plus ml-2"></i>
+                                    أضف إلى الطلب
+                                </button>
+                            ` : `
+                                <button disabled 
+                                        class="w-full bg-gray-400 text-white py-3 rounded-lg font-bold cursor-not-allowed">
+                                    <i class="fas fa-ban ml-2"></i>
+                                    غير متاح حالياً
+                                </button>
+                            `}
+                            
+                            <!-- رسائل للمستخدمين حسب نوعهم -->
+                            ${isCompany ? `
+                                <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <p class="text-sm text-blue-700 text-center">
+                                        <i class="fas fa-info-circle ml-1"></i>
+                                        أنت مسجل كشركة. 
+                                        <a href="{{ url_for('company_products') }}" class="font-bold underline">إدارة منتجاتك</a>
+                                    </p>
+                                </div>
+                            ` : ''}
+                            
+                            ${isAdmin ? `
+                                <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                    <p class="text-sm text-yellow-700 text-center">
+                                        <i class="fas fa-crown ml-1"></i>
+                                        أنت مدير النظام. 
+                                        <a href="{{ url_for('admin_products') }}" class="font-bold underline">إدارة جميع المنتجات</a>
+                                    </p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = html;
+        }
+
+        function increaseQuantity(productId) {
+            const product = products.find(p => p.id == productId);
+            if (!product) return;
+            
+            const minQty = product.min_quantity || product.minQuantity || 1;
+            const input = document.getElementById(`qty-${productId}`);
+            let val = parseInt(input.value) || 0;
+            val += minQty;
+            input.value = val;
+        }
+
+        function decreaseQuantity(productId) {
+            const product = products.find(p => p.id == productId);
+            if (!product) return;
+            
+            const minQty = product.min_quantity || product.minQuantity || 1;
+            const input = document.getElementById(`qty-${productId}`);
+            let val = parseInt(input.value) || 0;
+            if (val > 0) {
+                val -= minQty;
+                if (val < 0) val = 0;
+                input.value = val;
+            }
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id == productId);
+            if (!product) return;
+            
+            const minQty = product.min_quantity || product.minQuantity || 1;
+            const input = document.getElementById(`qty-${productId}`);
+            const quantity = parseInt(input.value) || 0;
+            
+            if (quantity < minQty) {
+                showMessage(`الحد الأدنى للطلب هو ${minQty} ${product.unit || 'كجم'}`, 'error');
+                return;
+            }
+            
+            // Check if product already in cart
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                existingItem.quantity = quantity;
+                showMessage('تم تحديث كمية المنتج في السلة', 'success');
+            } else {
+                cart.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    quantity: quantity,
+                    unit: product.unit || 'كجم',
+                    image: product.image,
+                    minQuantity: minQty,
+                    company_id: product.company_id,
+                    company_name: product.company_name
+                });
+                showMessage('تمت إضافة المنتج إلى سلة الطلبات', 'success');
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('cart', JSON.stringify(cart));
+            
+            // Reset input
+            input.value = 0;
+            
+            // Update cart summary
+            updateCartSummary();
+        }
+
+        function updateCartSummary() {
+            const cartSummary = document.getElementById('cartSummary');
+            const totalItems = cart.length;
+            
+            if (totalItems > 0) {
+                document.getElementById('cartTotalItems').textContent = `${totalItems} منتج`;
+                cartSummary.classList.remove('hidden');
+            } else {
+                cartSummary.classList.add('hidden');
+            }
+        }
+
+        function showQuickView(productId) {
+            const product = products.find(p => p.id == productId);
+            if (!product) return;
+            
+            let features = [];
+            if (product.features) {
+                if (typeof product.features === 'string') {
+                    try {
+                        features = JSON.parse(product.features);
+                    } catch(e) {
+                        features = [product.features];
+                    }
+                } else if (Array.isArray(product.features)) {
+                    features = product.features;
+                }
+            }
+            
+            const featuresList = features.map(f => 
+                `<li class="flex items-center text-gray-600">
+                    <i class="fas fa-check-circle text-green-500 ml-2"></i>
+                    ${f}
+                </li>`
+            ).join('');
+            
+            const minQty = product.min_quantity || product.minQuantity || 1;
+            const imageUrl = product.image && product.image !== '' ? product.image : 'https://via.placeholder.com/400';
+            
+            document.getElementById('quickViewContent').innerHTML = `
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="md:w-1/2">
+                        <img src="${imageUrl}" 
+                             alt="${product.name}" 
+                             class="w-full h-64 object-cover rounded-lg"
+                             onerror="this.src='https://via.placeholder.com/400'">
+                    </div>
+                    <div class="md:w-1/2">
+                        <h2 class="text-2xl font-bold text-green-800 mb-2">${product.name}</h2>
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="bg-gray-100 px-3 py-1 rounded-full text-sm">${product.category || 'عام'}</span>
+                            ${product.company_name ? `
+                                <span class="company-badge">
+                                    <i class="fas fa-building ml-1"></i>
+                                    ${product.company_name}
+                                </span>
+                            ` : ''}
+                        </div>
+                        <p class="text-gray-600 mb-4">${product.description || 'لا يوجد وصف'}</p>
+                        <div class="bg-green-50 p-4 rounded-lg mb-4">
+                            <p class="text-sm text-gray-600">السعر</p>
+                            <p class="text-2xl font-bold text-green-700">${product.price} ج.م / ${product.unit || 'كجم'}</p>
+                            <p class="text-sm text-gray-500 mt-1">الحد الأدنى: ${minQty} ${product.unit || 'كجم'}</p>
+                        </div>
+                        ${features.length > 0 ? `
+                            <div>
+                                <h3 class="font-bold text-gray-700 mb-2">جميع المميزات:</h3>
+                                <ul class="space-y-2">
+                                    ${featuresList}
+                                </ul>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="flex items-center justify-between my-4">
+                            <span class="text-gray-700">الكمية:</span>
+                            <div class="flex items-center">
+                                <button class="quantity-btn decrease-btn rounded-r-lg border-l-0" 
+                                        onclick="decreaseQuantity(${product.id})">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" id="quick-qty-${product.id}" 
+                                       class="w-16 h-10 text-center border-y border-gray-300" 
+                                       value="${minQty}" min="${minQty}" step="${minQty}">
+                                <button class="quantity-btn increase-btn rounded-l-lg border-r-0" 
+                                        onclick="increaseQuickQuantity(${product.id})">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button onclick="addToCartFromQuickView(${product.id})" 
+                                class="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition">
+                            <i class="fas fa-cart-plus ml-2"></i>
+                            أضف إلى الطلب
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('quickViewModal').classList.remove('hidden');
+        }
+        
+        function increaseQuickQuantity(productId) {
+            const product = products.find(p => p.id == productId);
+            if (!product) return;
+            
+            const minQty = product.min_quantity || product.minQuantity || 1;
+            const input = document.getElementById(`quick-qty-${productId}`);
+            let val = parseInt(input.value) || minQty;
+            val += minQty;
+            input.value = val;
+        }
+        
+        function addToCartFromQuickView(productId) {
+            const product = products.find(p => p.id == productId);
+            if (!product) return;
+            
+            const minQty = product.min_quantity || product.minQuantity || 1;
+            const input = document.getElementById(`quick-qty-${productId}`);
+            const quantity = parseInt(input.value) || minQty;
+            
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                existingItem.quantity = quantity;
+            } else {
+                cart.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    quantity: quantity,
+                    unit: product.unit || 'كجم',
+                    image: product.image,
+                    minQuantity: minQty,
+                    company_id: product.company_id,
+                    company_name: product.company_name
+                });
+            }
+            
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartSummary();
+            showMessage('تمت إضافة المنتج إلى سلة الطلبات', 'success');
+            closeQuickView();
+        }
+
+        function closeQuickView() {
+            document.getElementById('quickViewModal').classList.add('hidden');
+        }
+
+        async function logout() {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                const result = await API.logout();
+                if (result.success) {
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('userData');
+                    localStorage.removeItem('products');
+                    window.location.href = "{{ url_for('index') }}";
+                }
+            }
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('quickViewModal');
+            if (e.target === modal) {
+                closeQuickView();
+            }
+        });
+    </script>
+</body>
+</html>

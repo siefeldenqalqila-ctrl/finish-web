@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سجل الطلبات - Eco Paper Recycling</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-green-800 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2 space-x-reverse">
+                <i class="fas fa-recycle text-2xl"></i>
+                <a href="{{ url_for('base') }}" class="text-xl font-bold">Eco Paper Recycling</a>
+            </div>
+            
+            <div class="hidden md:flex items-center space-x-6 space-x-reverse">
+                <a href="{{ url_for('base') }}" class="hover:text-green-300">
+                    <i class="fas fa-home ml-2"></i>الرئيسية
+                </a>
+                <a href="{{ url_for('orders_history') }}" class="hover:text-green-300 font-bold">
+                    <i class="fas fa-clipboard-list ml-2"></i>طلباتي
+                </a>
+                <a href="{{ url_for('create_order') }}" class="hover:text-green-300">
+                    <i class="fas fa-plus-circle ml-2"></i>طلب جديد
+                </a>
+                <button id="logoutBtn" class="text-red-300 hover:text-red-400">
+                    <i class="fas fa-sign-out-alt ml-2"></i>تسجيل الخروج
+                </button>
+            </div>
+            
+            <button id="mobileMenuBtn" class="md:hidden text-2xl">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <div id="mobileMenu" class="hidden md:hidden mt-4 space-y-3 pr-4 bg-green-700 p-4 rounded-lg">
+            <a href="{{ url_for('base') }}" class="block hover:text-green-300">الرئيسية</a>
+            <a href="{{ url_for('orders_history') }}" class="block hover:text-green-300 font-bold">طلباتي</a>
+            <a href="{{ url_for('create_order') }}" class="block hover:text-green-300">طلب جديد</a>
+            <button id="logoutBtnMobile" class="block text-red-300 hover:text-red-400">تسجيل الخروج</button>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="fixed top-4 right-4 z-50">
+                    <div class="bg-{% if category == 'success' %}green{% else %}red{% endif %}-100 border border-{% if category == 'success' %}green{% else %}red{% endif %}-400 text-{% if category == 'success' %}green{% else %}red{% endif %}-700 px-6 py-4 rounded-lg shadow-lg flex items-center">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} ml-3 text-xl"></i>
+                        <span class="font-medium">{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="mr-6">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-green-800 mb-2">سجل الطلبات</h1>
+            <p class="text-gray-600">استعرض جميع طلباتك السابقة والحالية</p>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div class="flex-1 w-full">
+                    <div class="relative">
+                        <input type="text" id="searchOrders" 
+                               class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                               placeholder="ابحث برقم الطلب أو اسم المنتج...">
+                        <button onclick="filterOrders()" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-green-600">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap gap-3">
+                    <select id="statusFilter" onchange="filterOrders()"
+                            class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        <option value="">جميع الحالات</option>
+                        <option value="قيد المراجعة">قيد المراجعة</option>
+                        <option value="في الطريق">في الطريق</option>
+                        <option value="تم الاستلام">تم الاستلام</option>
+                        <option value="مكتمل">مكتمل</option>
+                        <option value="ملغي">ملغي</option>
+                    </select>
+                    
+                    <select id="dateFilter" onchange="filterOrders()"
+                            class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        <option value="">جميع التواريخ</option>
+                        <option value="today">اليوم</option>
+                        <option value="week">هذا الأسبوع</option>
+                        <option value="month">هذا الشهر</option>
+                        <option value="year">هذا العام</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-green-50 p-4 rounded-lg text-center">
+                    <p class="text-2xl font-bold text-green-700" id="totalOrdersCount">0</p>
+                    <p class="text-sm text-gray-600">إجمالي الطلبات</p>
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-lg text-center">
+                    <p class="text-2xl font-bold text-blue-700" id="activeOrdersCount">0</p>
+                    <p class="text-sm text-gray-600">طلبات نشطة</p>
+                </div>
+                
+                <div class="bg-yellow-50 p-4 rounded-lg text-center">
+                    <p class="text-2xl font-bold text-yellow-700" id="pendingOrdersCount">0</p>
+                    <p class="text-sm text-gray-600">قيد المراجعة</p>
+                </div>
+                
+                <div class="bg-green-100 p-4 rounded-lg text-center">
+                    <p class="text-2xl font-bold text-green-800" id="completedOrdersCount">0</p>
+                    <p class="text-sm text-gray-600">مكتملة</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-green-50">
+                            <th class="text-right py-4 px-6 font-bold text-green-800">رقم الطلب</th>
+                            <th class="text-right py-4 px-6 font-bold text-green-800">التاريخ</th>
+                            <th class="text-right py-4 px-6 font-bold text-green-800">المنتجات</th>
+                            <th class="text-right py-4 px-6 font-bold text-green-800">الكمية</th>
+                            <th class="text-right py-4 px-6 font-bold text-green-800">الإجمالي</th>
+                            <th class="text-right py-4 px-6 font-bold text-green-800">الحالة</th>
+                            <th class="text-right py-4 px-6 font-bold text-green-800">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                        <tr>
+                            <td colspan="7" class="text-center py-12">
+                                <div class="loading-spinner mx-auto"></div>
+                                <p class="text-gray-500 mt-4">جاري تحميل الطلبات...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div id="noOrdersMessage" class="hidden text-center py-12">
+                    <i class="fas fa-clipboard-list text-5xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-600 mb-2">لا توجد طلبات</h3>
+                    <p class="text-gray-500 mb-6">لم تقم بإنشاء أي طلبات حتى الآن</p>
+                    <a href="{{ url_for('create_order') }}" class="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition duration-300">
+                        <i class="fas fa-plus ml-2"></i> إنشاء طلب جديد
+                    </a>
+                </div>
+            </div>
+            
+            <div class="flex justify-between items-center p-6 border-t border-gray-200">
+                <div class="text-gray-600">
+                    عرض <span id="currentCount">0</span> من <span id="totalCount">0</span> طلب
+                </div>
+                
+                <div class="flex space-x-2 space-x-reverse">
+                    <button onclick="prevPage()" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            id="prevBtn" disabled>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    
+                    <div class="flex items-center">
+                        <span id="currentPage">1</span>
+                        <span class="mx-2">/</span>
+                        <span id="totalPages">1</span>
+                    </div>
+                    
+                    <button onclick="nextPage()" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            id="nextBtn" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-green-50 rounded-xl p-6">
+                <h3 class="text-xl font-bold text-green-800 mb-4">نصائح لإعادة التدوير</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-600 mt-1 ml-3"></i>
+                        <span>افصل الورق عن المواد الأخرى قبل التخزين</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-600 mt-1 ml-3"></i>
+                        <span>حافظ على الورق جافاً ونظيفاً للحصول على أفضل سعر</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-600 mt-1 ml-3"></i>
+                        <span>اجمع الورق في مكان واحد لتسهيل عملية الاستلام</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-600 mt-1 ml-3"></i>
+                        <span>يمكنك طلب كميات كبيرة للحصول على خصومات خاصة</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="bg-blue-50 rounded-xl p-6">
+                <h3 class="text-xl font-bold text-blue-800 mb-4">للمساعدة والدعم</h3>
+                <div class="space-y-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-headset text-blue-600 text-xl ml-4"></i>
+                        <div>
+                            <p class="font-bold">الدعم الفني</p>
+                            <p class="text-sm text-gray-600">01234567890</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <i class="fab fa-whatsapp text-green-600 text-xl ml-4"></i>
+                        <div>
+                            <p class="font-bold">واتساب</p>
+                            <p class="text-sm text-gray-600">01234567890</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <i class="fas fa-envelope text-green-600 text-xl ml-4"></i>
+                        <div>
+                            <p class="font-bold">البريد الإلكتروني</p>
+                            <p class="text-sm text-gray-600">support@ecopaper.com</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/action.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/order.js') }}"></script>
+    <script>
+        let allOrders = [];
+        let filteredOrders = [];
+        let currentPage = 1;
+        const ordersPerPage = 10;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in via API
+            API.getUserData().then(response => {
+                if (!response.success) {
+                    window.location.href = "{{ url_for('login') }}";
+                    return;
+                }
+            });
+            
+            loadOrders();
+            
+            document.getElementById('searchOrders').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    filterOrders();
+                }
+            });
+
+            // Logout buttons
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('logoutBtnMobile').addEventListener('click', logout);
+            
+            // Mobile menu
+            document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+                const menu = document.getElementById('mobileMenu');
+                menu.classList.toggle('hidden');
+            });
+        });
+        
+        async function loadOrders() {
+            try {
+                // جلب الطلبات من API
+                const response = await fetch('/api/orders');
+                const result = await response.json();
+                
+                if (result.success && result.orders) {
+                    allOrders = result.orders;
+                    console.log('Orders loaded from API:', allOrders.length);
+                } else {
+                    allOrders = [];
+                }
+                
+                // ترتيب الطلبات من الأحدث إلى الأقدم
+                allOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                
+                filteredOrders = [...allOrders];
+                
+                updateOrdersCount();
+                displayOrders();
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                allOrders = [];
+                filteredOrders = [];
+                updateOrdersCount();
+                displayOrders();
+            }
+        }
+        
+        function filterOrders() {
+            const searchTerm = document.getElementById('searchOrders').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            
+            filteredOrders = allOrders.filter(order => {
+                let matchesSearch = true;
+                if (searchTerm) {
+                    matchesSearch = 
+                        (order.order_number && order.order_number.toLowerCase().includes(searchTerm)) ||
+                        (order.id && order.id.toString().toLowerCase().includes(searchTerm)) ||
+                        (order.products && order.products.some(product => 
+                            product.name.toLowerCase().includes(searchTerm)
+                        ));
+                }
+                
+                let matchesStatus = true;
+                if (statusFilter) {
+                    matchesStatus = order.status === statusFilter;
+                }
+                
+                let matchesDate = true;
+                if (dateFilter) {
+                    const orderDate = new Date(order.created_at);
+                    const today = new Date();
+                    
+                    switch(dateFilter) {
+                        case 'today':
+                            matchesDate = orderDate.toDateString() === today.toDateString();
+                            break;
+                        case 'week':
+                            const weekAgo = new Date();
+                            weekAgo.setDate(weekAgo.getDate() - 7);
+                            matchesDate = orderDate >= weekAgo;
+                            break;
+                        case 'month':
+                            const monthAgo = new Date();
+                            monthAgo.setMonth(monthAgo.getMonth() - 1);
+                            matchesDate = orderDate >= monthAgo;
+                            break;
+                        case 'year':
+                            const yearAgo = new Date();
+                            yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+                            matchesDate = orderDate >= yearAgo;
+                            break;
+                    }
+                }
+                
+                return matchesSearch && matchesStatus && matchesDate;
+            });
+            
+            currentPage = 1;
+            updateOrdersCount();
+            displayOrders();
+        }
+        
+        function updateOrdersCount() {
+            const totalOrders = allOrders.length;
+            const activeOrders = allOrders.filter(order => 
+                order.status !== 'مكتمل' && order.status !== 'ملغي'
+            ).length;
+            
+            const pendingOrders = allOrders.filter(order => 
+                order.status === 'قيد المراجعة'
+            ).length;
+            
+            const completedOrders = allOrders.filter(order => 
+                order.status === 'مكتمل'
+            ).length;
+            
+            document.getElementById('totalOrdersCount').textContent = totalOrders;
+            document.getElementById('activeOrdersCount').textContent = activeOrders;
+            document.getElementById('pendingOrdersCount').textContent = pendingOrders;
+            document.getElementById('completedOrdersCount').textContent = completedOrders;
+        }
+        
+        function displayOrders() {
+            const tbody = document.getElementById('ordersTableBody');
+            const noOrdersMessage = document.getElementById('noOrdersMessage');
+            
+            if (filteredOrders.length === 0) {
+                tbody.classList.add('hidden');
+                noOrdersMessage.classList.remove('hidden');
+                updatePagination();
+                return;
+            }
+            
+            tbody.classList.remove('hidden');
+            noOrdersMessage.classList.add('hidden');
+            
+            const startIndex = (currentPage - 1) * ordersPerPage;
+            const endIndex = startIndex + ordersPerPage;
+            const currentOrders = filteredOrders.slice(startIndex, endIndex);
+            
+            let ordersHTML = '';
+            
+            currentOrders.forEach(order => {
+                const totalProducts = order.products ? order.products.length : 0;
+                const totalQuantity = order.products ? order.products.reduce((sum, product) => 
+                    sum + (product.quantity || 0), 0) : 0;
+                const orderId = order.order_number || order.id;
+                
+                let statusClass = 'bg-gray-100 text-gray-800';
+                if (order.status === 'مكتمل') statusClass = 'bg-green-100 text-green-800';
+                else if (order.status === 'في الطريق') statusClass = 'bg-blue-100 text-blue-800';
+                else if (order.status === 'قيد المراجعة') statusClass = 'bg-yellow-100 text-yellow-800';
+                else if (order.status === 'تم الاستلام') statusClass = 'bg-green-50 text-green-700';
+                else if (order.status === 'ملغي') statusClass = 'bg-red-100 text-red-800';
+                
+                ordersHTML += `
+                    <tr class="border-b hover:bg-gray-50 transition duration-200">
+                        <td class="py-4 px-6 font-bold">#${orderId}</td>
+                        <td class="py-4 px-6">${formatDate(order.created_at)}</td>
+                        <td class="py-4 px-6">
+                            <div class="flex items-center">
+                                <span class="bg-gray-100 px-2 py-1 rounded text-sm ml-2">
+                                    ${totalProducts}
+                                </span>
+                                <span>منتج</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6">${totalQuantity} كجم</td>
+                        <td class="py-4 px-6 font-bold">${(order.total || 0).toFixed(2)} ج.م</td>
+                        <td class="py-4 px-6">
+                            <span class="px-3 py-1 rounded-full text-sm font-bold ${statusClass}">
+                                ${order.status}
+                            </span>
+                        </td>
+                        <td class="py-4 px-6">
+                            <div class="flex space-x-3 space-x-reverse">
+                                <a href="{{ url_for('order_tracking') }}?order=${orderId}" 
+                                   class="text-green-600 hover:text-green-800" title="تتبع">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('order_confirm') }}?order=${orderId}" 
+                                   class="text-blue-600 hover:text-blue-800" title="تفاصيل">
+                                    <i class="fas fa-file-alt"></i>
+                                </a>
+                                ${order.status === 'قيد المراجعة' ? `
+                                    <button onclick="cancelOrder('${order.id}', '${orderId}')" 
+                                            class="text-red-600 hover:text-red-800" title="إلغاء">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = ordersHTML;
+            updatePagination();
+        }
+        
+        function updatePagination() {
+            const totalOrders = filteredOrders.length;
+            const totalPages = Math.ceil(totalOrders / ordersPerPage) || 1;
+            
+            document.getElementById('currentCount').textContent = filteredOrders.length > 0 ? 
+                Math.min((currentPage - 1) * ordersPerPage + 1, totalOrders) : 0;
+            document.getElementById('totalCount').textContent = totalOrders;
+            document.getElementById('currentPage').textContent = currentPage;
+            document.getElementById('totalPages').textContent = totalPages;
+            
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage === totalPages || totalPages === 0;
+        }
+        
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayOrders();
+            }
+        }
+        
+        function nextPage() {
+            const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayOrders();
+            }
+        }
+        
+        async function cancelOrder(orderId, orderNumber) {
+            if (confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) {
+                try {
+                    const response = await fetch(`/admin/order/${orderId}/status`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'ملغي' })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showMessage('تم إلغاء الطلب بنجاح', 'success');
+                        await loadOrders();
+                    } else {
+                        showMessage(result.message || 'حدث خطأ', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error cancelling order:', error);
+                    showMessage('حدث خطأ في الاتصال بالخادم', 'error');
+                }
+            }
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '--';
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return '--';
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                return date.toLocaleDateString('ar-EG', options);
+            } catch (e) {
+                return '--';
+            }
+        }
+        
+        async function logout() {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                const result = await API.logout();
+                if (result.success) {
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('userData');
+                    localStorage.removeItem('users');
+                    window.location.href = "{{ url_for('index') }}";
+                }
+            }
+        }
+    </script>
+</body>
+</html>
